@@ -35,6 +35,10 @@ yarn-error.log*
 /screenshots/
 /test-results/
 
+# worker
+worker/node_modules
+worker/dist
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

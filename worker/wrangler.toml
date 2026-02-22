@@ -1,0 +1,18 @@
+name = "takmd-gateway"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+NOTION_DATABASE_ID = "a4058c50e8fc43f8aeebbaefcc7b923c"
+PAGES_DOMAIN = "patient-dashboard.pages.dev"
+
+[[kv_namespaces]]
+binding = "PATIENT_CACHE"
+id = "fdbfe4517bc646bcacf5ca683254cfa0"
+
+[env.production]
+routes = [{ pattern = "*.takmd.com/*", zone_name = "takmd.com" }]
+
+[[env.production.kv_namespaces]]
+binding = "PATIENT_CACHE"
+id = "fdbfe4517bc646bcacf5ca683254cfa0"
