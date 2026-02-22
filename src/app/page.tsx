@@ -1,5 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  redirect("/patient/P001");
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/patient/P001");
+  }, [router]);
+  return null;
 }
