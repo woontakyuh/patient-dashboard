@@ -1,339 +1,235 @@
-import { Patient } from "@/lib/types";
+import type { Patient, ClinicalStage, FollowUp, StageStatus } from "@/lib/types";
+import type { SurgeryType } from "@/data/surgery-templates/types";
+import { getSurgeryTemplate } from "@/data/surgery-templates";
 
-export const mockPatient: Patient = {
-  id: "P001",
-  name: "김태수",
-  age: 29,
-  diagnosis: {
-    code: "L4-5",
-    name: "HIVD (Lumbar disc herniation)",
-    nameKo: "요추 4-5번 추간판 탈출증",
-  },
-  surgery: {
-    name: "UBE discectomy",
-    nameKo: "양방향 내시경 디스크 제거술",
-    abbreviation: "UBE",
-    date: "2026-02-10",
-  },
-  admission: {
-    date: "2026-02-09",
-    expectedDischarge: "2026-02-11",
-  },
-  followUps: [
-    { label: "2주 외래", date: "2026-02-24" },
-    { label: "6주 외래", date: "2026-03-24" },
-    { label: "3개월 외래", date: "2026-05-10" },
-    { label: "6개월 외래", date: "2026-08-10" },
-    { label: "1년 외래", date: "2027-02-10" },
-  ],
-  stages: [
-    {
-      id: "pre-op",
-      title: "수술 전 준비 (입원 당일)",
-      date: "2026-02-09",
-      status: "completed",
-      phase: "inpatient",
-      instructions: [
-        "입원 수속 및 병실 배정",
-        "수술 전 혈액검사, 소변검사, 심전도, 흉부 X-ray 시행",
-        "마취과 상담 및 동의서 작성",
-        "수술 부위 피부 준비",
-        "자정부터 금식 (물 포함)",
-      ],
-      warnings: [
-        "항응고제/항혈소판제 복용 시 반드시 의료진에게 알릴 것",
-        "알레르기 이력 반드시 고지",
-      ],
-      dos: [
-        "수술 동의서 꼼꼼히 읽고 서명하기",
-        "보호자 연락처 확인하기",
-        "개인 귀중품은 보호자에게 맡기기",
-      ],
-      donts: [
-        "자정 이후 음식 및 물 섭취 금지",
-        "흡연 금지",
-        "임의로 약 복용하지 않기",
-      ],
+// ── Helpers ──────────────────────────────────────────────────────
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function computeStatus(dateStr: string): StageStatus {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  const diff = (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+  if (diff < -1) return "completed";
+  if (diff <= 1) return "current";
+  return "upcoming";
+}
+
+export function buildStagesFromTemplate(
+  surgeryDate: string,
+  surgeryType: SurgeryType,
+): ClinicalStage[] {
+  const template = getSurgeryTemplate(surgeryType);
+  return template.stages.map((s) => {
+    const date = s.dateOffset !== null ? addDays(surgeryDate, s.dateOffset) : "";
+    return {
+      id: s.id,
+      title: s.title,
+      date,
+      status: computeStatus(date),
+      phase: s.phase,
+      instructions: s.instructions,
+      warnings: s.warnings,
+      dos: s.dos,
+      donts: s.donts,
+      faq: s.faq,
+    };
+  });
+}
+
+export function buildFollowUpsFromTemplate(
+  surgeryDate: string,
+  surgeryType: SurgeryType,
+): FollowUp[] {
+  const template = getSurgeryTemplate(surgeryType);
+  return template.followUpOffsets.map((f) => ({
+    label: f.label,
+    date: addDays(surgeryDate, f.daysAfterSurgery),
+  }));
+}
+
+// ── Mock Patients ────────────────────────────────────────────────
+
+const ubeTemplate = getSurgeryTemplate("ube");
+const vpTemplate = getSurgeryTemplate("vp");
+const acdfTemplate = getSurgeryTemplate("acdf");
+const lpTemplate = getSurgeryTemplate("lp");
+const fusionTemplate = getSurgeryTemplate("fusion");
+
+const mockPatientsData: Patient[] = [
+  // P001 — UBE (기존 김태수)
+  {
+    id: "P001",
+    subdomain: "09782901",
+    name: "김태수",
+    age: 29,
+    sex: "M",
+    diagnosis: {
+      code: "L4-5",
+      name: "HIVD (Lumbar disc herniation)",
+      nameKo: "요추 4-5번 추간판 탈출증",
     },
-    {
-      id: "surgery-day",
-      title: "수술 당일",
+    surgery: {
+      type: "ube",
+      name: ubeTemplate.name,
+      nameKo: ubeTemplate.nameKo,
+      abbreviation: ubeTemplate.abbreviation,
       date: "2026-02-10",
-      status: "completed",
-      phase: "inpatient",
-      instructions: [
-        "수술 가운으로 환복",
-        "정맥 주사(IV) 확보",
-        "수술실 이동 및 양방향 내시경 디스크 제거술 시행 (약 1시간)",
-        "회복실에서 마취 회복 후 병실 복귀",
-        "수술 후 하지 감각 및 운동 기능 확인",
-      ],
-      warnings: [
-        "수술 후 하지 감각 저하 또는 마비 발생 시 즉시 알릴 것",
-        "심한 두통, 오심, 구토 시 의료진 호출",
-        "수술 부위 과도한 출혈이나 삼출물 확인",
-      ],
-      dos: [
-        "의료진 지시에 따라 안정 취하기",
-        "통증 참지 말고 알리기",
-        "지시된 체위 유지하기",
-      ],
-      donts: [
-        "무리하게 움직이지 않기",
-        "허리 비틀기 동작 금지",
-        "수술 부위 만지지 않기",
-      ],
+      categories: ["UBE"],
     },
-    {
-      id: "pod1",
-      title: "수술 후 1일차 (POD#1)",
-      date: "2026-02-11",
-      status: "current",
-      phase: "inpatient",
-      instructions: [
-        "보조기 착용 하에 침상 옆 기립 시도",
-        "보행기 이용 단거리 보행 시작",
-        "식이 진행 (유동식 → 일반식)",
-        "배액관 제거 (의사 판단 하)",
-        "수술 부위 드레싱 상태 확인",
-      ],
-      warnings: [
-        "보행 시 어지럼증이나 하지 위약감 발생 시 즉시 중단",
-        "발열(38°C 이상) 시 의료진 보고",
-        "소변 보기 어려울 경우 알릴 것",
-      ],
-      dos: [
-        "조기 보행 시도하기 (짧은 거리부터)",
-        "심호흡 운동 자주 하기",
-        "충분한 수분 섭취",
-        "통증 수준 의료진에게 정확히 전달하기",
-      ],
-      donts: [
-        "보조기 없이 걷지 않기",
-        "허리 숙이기/비틀기 금지",
-        "무거운 물건 들지 않기",
-        "장시간 같은 자세 유지하지 않기",
-      ],
+    admission: {
+      date: "2026-02-09",
+      expectedDischarge: "2026-02-11",
     },
-    {
-      id: "discharge",
-      title: "퇴원 및 퇴원교육",
-      date: "2026-02-11",
-      status: "upcoming",
-      phase: "inpatient",
-      instructions: [
-        "퇴원 약 수령 (진통제, 근이완제, 위장약)",
-        "외래 예약 확인 (2주 후: 2026-02-24)",
-        "퇴원 후 자가 관리 교육",
-        "상처 관리법 교육 (방수 드레싱, 소독법)",
-        "재활 운동 교육자료 수령",
-      ],
-      warnings: [
-        "퇴원 후 38°C 이상 발열 시 응급 내원",
-        "하지 마비 또는 대소변 장애 발생 시 즉시 응급실 방문",
-        "수술 부위 발적, 부종, 농성 삼출물 시 즉시 내원",
-      ],
-      dos: [
-        "처방 약물 정해진 시간에 복용하기",
-        "보조기 착용하고 짧은 거리 산책하기",
-        "상처 부위 건조하게 유지하기",
-        "교육받은 재활 운동 매일 수행하기",
-      ],
-      donts: [
-        "3kg 이상 물건 들지 않기",
-        "장시간 앉거나 운전하지 않기",
-        "목욕탕, 사우나, 수영장 이용 금지",
-        "허리에 무리가 가는 운동 (골프, 테니스 등) 금지",
-      ],
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: ubeTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-02-10", "ube"),
+    stages: buildStagesFromTemplate("2026-02-10", "ube"),
+  },
+
+  // P002 — VP (골다공증 압박골절)
+  {
+    id: "P002",
+    subdomain: "10234501",
+    name: "박순자",
+    age: 74,
+    sex: "F",
+    diagnosis: {
+      code: "T12",
+      name: "Osteoporotic compression fracture",
+      nameKo: "흉추 12번 골다공증성 압박골절",
     },
-    {
-      id: "fu-2w",
-      title: "수술 후 2주 외래",
-      date: "2026-02-24",
-      status: "upcoming",
-      phase: "outpatient",
-      instructions: [
-        "수술 부위 상처 확인 및 실밥 제거",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
-        "신경학적 검진 (하지 감각, 근력, 반사)",
-        "필요 시 약물 조정",
-      ],
-      warnings: [
-        "상처 치유가 지연되거나 감염 소견 시 추가 처치 필요",
-        "통증이 수술 전보다 악화된 경우 반드시 보고",
-      ],
-      dos: [
-        "일상 생활 동작 점진적으로 늘리기",
-        "걷기 운동 하루 20~30분",
-        "처방 약물 꾸준히 복용하기",
-      ],
-      donts: [
-        "5kg 이상 물건 들기 금지",
-        "장시간 (1시간 이상) 연속 앉기 금지",
-        "격렬한 운동 금지",
-      ],
-      faq: [
-        {
-          question: "실밥 제거가 아프나요?",
-          answer: "UBE 수술은 피부 절개가 작아 (약 1cm × 2곳) 실밥 제거 시 불편감이 적습니다. 간단한 시술로 5분 이내 완료됩니다.",
-        },
-        {
-          question: "샤워는 언제부터 가능한가요?",
-          answer: "실밥 제거 후 방수 드레싱을 유지하면 샤워가 가능합니다. 목욕탕이나 사우나는 수술 후 6주 이후 권장됩니다.",
-        },
-        {
-          question: "운전은 언제부터 할 수 있나요?",
-          answer: "통증이 충분히 조절되고, 급정거 시 브레이크를 안전하게 밟을 수 있을 때 가능합니다. 보통 2~4주 후부터 단거리 운전이 가능합니다.",
-        },
-      ],
+    surgery: {
+      type: "vp",
+      name: vpTemplate.name,
+      nameKo: vpTemplate.nameKo,
+      abbreviation: vpTemplate.abbreviation,
+      date: "2026-02-15",
+      categories: ["VP"],
     },
-    {
-      id: "fu-6w",
-      title: "수술 후 6주 외래",
-      date: "2026-03-24",
-      status: "upcoming",
-      phase: "outpatient",
-      instructions: [
-        "X-ray 촬영하여 수술 부위 경과 확인",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
-        "재활 운동 진행 상황 평가",
-        "보조기 착용 중단 여부 결정",
-      ],
-      warnings: [
-        "하지 방사통 재발 시 MRI 추가 검사 필요 가능",
-        "보행 시 절뚝거림이 있으면 보고",
-      ],
-      dos: [
-        "코어 근력 강화 운동 시작하기",
-        "수영, 자전거 등 저강도 유산소 운동 시작",
-        "바른 자세 습관 유지하기",
-      ],
-      donts: [
-        "무거운 역기 운동 금지",
-        "허리 과신전/과굴곡 동작 금지",
-        "높은 곳에서 뛰어내리기 금지",
-      ],
-      faq: [
-        {
-          question: "보조기를 언제 벗을 수 있나요?",
-          answer: "보통 수술 후 4~6주에 보조기 착용 중단을 결정합니다. 의사가 X-ray와 진찰 결과를 보고 판단합니다.",
-        },
-        {
-          question: "운동은 어떤 것부터 시작하나요?",
-          answer: "걷기 → 수영 → 고정 자전거 순으로 시작합니다. 코어 근력 운동(플랭크, 브릿지)도 이 시기부터 권장됩니다.",
-        },
-        {
-          question: "직장 복귀는 가능한가요?",
-          answer: "사무직의 경우 수술 후 4~6주, 육체 노동의 경우 8~12주 후 복귀가 일반적입니다. 개인 차이가 있으므로 의사와 상담하세요.",
-        },
-      ],
+    admission: {
+      date: "2026-02-14",
+      expectedDischarge: "2026-02-16",
     },
-    {
-      id: "fu-3m",
-      title: "수술 후 3개월 외래",
-      date: "2026-05-10",
-      status: "upcoming",
-      phase: "outpatient",
-      instructions: [
-        "MRI 촬영 (필요 시)",
-        "PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
-        "일상 복귀 수준 평가",
-        "직장 복귀 가능 여부 상담",
-      ],
-      warnings: [
-        "증상 재발 시 재수술 가능성 상담 필요",
-        "새로운 부위의 통증 발생 시 보고",
-      ],
-      dos: [
-        "정상 일상 활동으로 점진적 복귀",
-        "규칙적인 운동 습관 만들기",
-        "체중 관리 (적정 BMI 유지)",
-      ],
-      donts: [
-        "고강도 접촉 스포츠 (축구, 농구 등) 아직 금지",
-        "무리한 허리 사용 동작 자제",
-      ],
-      faq: [
-        {
-          question: "디스크가 다시 나올 수 있나요?",
-          answer: "동일 부위 재발률은 약 5~10%입니다. 코어 운동, 바른 자세, 체중 관리가 재발 방지에 중요합니다.",
-        },
-        {
-          question: "골프나 테니스를 해도 되나요?",
-          answer: "3개월 시점에서 허리 회전이 포함된 스포츠는 아직 자제를 권장합니다. 6개월 경과 후 점진적으로 시작하세요.",
-        },
-      ],
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: vpTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-02-15", "vp"),
+    stages: buildStagesFromTemplate("2026-02-15", "vp"),
+  },
+
+  // P003 — ACDF (경추 디스크)
+  {
+    id: "P003",
+    subdomain: "10345602",
+    name: "이정훈",
+    age: 52,
+    sex: "M",
+    diagnosis: {
+      code: "C5-6",
+      name: "Cervical disc herniation with radiculopathy",
+      nameKo: "경추 5-6번 추간판 탈출증",
     },
-    {
-      id: "fu-6m",
-      title: "수술 후 6개월 외래",
-      date: "2026-08-10",
-      status: "upcoming",
-      phase: "outpatient",
-      instructions: [
-        "PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
-        "기능적 회복 평가",
-        "운동 강도 상향 가능 여부 판단",
-      ],
-      warnings: [
-        "만성 통증 양상이 있으면 통증 클리닉 연계 고려",
-      ],
-      dos: [
-        "다양한 운동 활동 점진적으로 확대",
-        "직장/사회 활동 정상 수행",
-        "정기적인 코어 운동 유지",
-      ],
-      donts: [
-        "급격한 고강도 운동 전환 금지",
-        "장시간 잘못된 자세로 업무하지 않기",
-      ],
-      faq: [
-        {
-          question: "이제 모든 운동을 해도 되나요?",
-          answer: "대부분의 운동이 가능하지만, 데드리프트 같은 고중량 허리 부하 운동은 주의가 필요합니다. 점진적으로 강도를 높이세요.",
-        },
-        {
-          question: "허리가 가끔 뻐근한데 괜찮나요?",
-          answer: "수술 후 근육 회복 과정에서 간헐적 뻐근함은 정상입니다. 다리 저림이나 방사통이 동반되면 진료를 받으세요.",
-        },
-      ],
+    surgery: {
+      type: "acdf",
+      name: acdfTemplate.name,
+      nameKo: acdfTemplate.nameKo,
+      abbreviation: acdfTemplate.abbreviation,
+      date: "2026-02-20",
+      categories: ["ACDF"],
     },
-    {
-      id: "fu-1y",
-      title: "수술 후 1년 외래",
-      date: "2027-02-10",
-      status: "upcoming",
-      phase: "outpatient",
-      instructions: [
-        "최종 PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
-        "MRI 촬영 (필요 시)",
-        "최종 기능 평가 및 치료 종결 상담",
-        "장기 관리 계획 수립",
-      ],
-      warnings: [
-        "인접 분절 퇴행 가능성에 대해 교육",
-        "재발 증상 발현 시 조기 내원 권고",
-      ],
-      dos: [
-        "평생 코어 근력 운동 유지",
-        "바른 자세 습관 생활화",
-        "정기 건강검진 시 척추 상태 확인",
-        "적정 체중 유지",
-      ],
-      donts: [
-        "장기간 허리 건강 관리 소홀히 하지 않기",
-        "증상 재발 시 자가 판단으로 방치하지 않기",
-      ],
-      faq: [
-        {
-          question: "앞으로 정기 검진이 필요한가요?",
-          answer: "특별한 증상이 없으면 1년 외래 이후 정기 추적은 필요 없습니다. 다만 새로운 증상이 발생하면 바로 내원하세요.",
-        },
-        {
-          question: "인접 분절 퇴행이란 무엇인가요?",
-          answer: "수술한 디스크 위/아래 분절에 시간이 지나면서 퇴행이 진행될 수 있습니다. 코어 운동과 자세 관리로 예방할 수 있습니다.",
-        },
-      ],
+    admission: {
+      date: "2026-02-19",
+      expectedDischarge: "2026-02-22",
     },
-  ],
-};
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: acdfTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-02-20", "acdf"),
+    stages: buildStagesFromTemplate("2026-02-20", "acdf"),
+  },
+
+  // P004 — LP (경추 추궁판 성형술)
+  {
+    id: "P004",
+    subdomain: "10456703",
+    name: "최영희",
+    age: 65,
+    sex: "F",
+    diagnosis: {
+      code: "C3-6",
+      name: "Cervical spinal stenosis with myelopathy",
+      nameKo: "경추 3-6번 척추관 협착증 (척수병증)",
+    },
+    surgery: {
+      type: "lp",
+      name: lpTemplate.name,
+      nameKo: lpTemplate.nameKo,
+      abbreviation: lpTemplate.abbreviation,
+      date: "2026-03-05",
+      categories: ["LP"],
+    },
+    admission: {
+      date: "2026-03-04",
+      expectedDischarge: "2026-03-08",
+    },
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: lpTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-03-05", "lp"),
+    stages: buildStagesFromTemplate("2026-03-05", "lp"),
+  },
+
+  // P005 — Fusion (요추 유합술)
+  {
+    id: "P005",
+    subdomain: "10567804",
+    name: "정민수",
+    age: 58,
+    sex: "M",
+    diagnosis: {
+      code: "L4-5",
+      name: "Spondylolisthesis with spinal stenosis",
+      nameKo: "요추 4-5번 전방전위증 동반 척추관 협착증",
+    },
+    surgery: {
+      type: "fusion",
+      name: fusionTemplate.name,
+      nameKo: fusionTemplate.nameKo,
+      abbreviation: fusionTemplate.abbreviation,
+      date: "2026-03-10",
+      categories: ["Fusion"],
+    },
+    admission: {
+      date: "2026-03-09",
+      expectedDischarge: "2026-03-15",
+    },
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: fusionTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-03-10", "fusion"),
+    stages: buildStagesFromTemplate("2026-03-10", "fusion"),
+  },
+];
+
+// ── Lookup ───────────────────────────────────────────────────────
+
+const patientsById = new Map(mockPatientsData.map((p) => [p.id, p]));
+
+export function getPatientById(id: string): Patient | undefined {
+  return patientsById.get(id);
+}
+
+export function getAllPatientIds(): string[] {
+  return mockPatientsData.map((p) => p.id);
+}
+
+// Backward compatibility
+export const mockPatient: Patient = mockPatientsData[0];

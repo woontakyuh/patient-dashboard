@@ -1,8 +1,16 @@
 import InstructionsClient from "./InstructionsClient";
+import { getAllPatientIds, getPatientById } from "@/data/mock-patient";
 
 export function generateStaticParams() {
-  const stages = ["pre-op", "surgery-day", "pod1", "discharge", "fu-2w", "fu-6w", "fu-3m", "fu-6m", "fu-1y"];
-  return stages.map((stage) => ({ id: "P001", stage }));
+  const params: { id: string; stage: string }[] = [];
+  for (const id of getAllPatientIds()) {
+    const patient = getPatientById(id);
+    if (!patient) continue;
+    for (const stage of patient.stages) {
+      params.push({ id, stage: stage.id });
+    }
+  }
+  return params;
 }
 
 export default function InstructionsPage({

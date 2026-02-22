@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { mockPatient } from "@/data/mock-patient";
+import { getPatientById } from "@/data/mock-patient";
 import { formatDate } from "@/lib/utils";
 
 export default function InstructionsClient({
@@ -13,7 +13,18 @@ export default function InstructionsClient({
   stage: string;
 }) {
   const router = useRouter();
-  const patient = mockPatient;
+  const patient = getPatientById(id);
+
+  if (!patient) {
+    return (
+      <div className="animate-fade-in p-6 text-center">
+        <p className="text-gray-500">환자 정보를 찾을 수 없습니다.</p>
+        <Link href="/" className="text-blue-600 text-sm mt-2 inline-block hover:underline">
+          홈으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
   const stages = patient.stages;
   const stageIndex = stages.findIndex((s) => s.id === stageId);
   const stage = stages[stageIndex];

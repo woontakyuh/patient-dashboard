@@ -4,68 +4,137 @@ interface SpineAvatarProps {
   surgeryLevel: string;
 }
 
-const vertebrae = [
-  { id: "L1", label: "요추 1번", y: 0 },
-  { id: "L2", label: "요추 2번", y: 1 },
-  { id: "L3", label: "요추 3번", y: 2 },
-  { id: "L4", label: "요추 4번", y: 3 },
-  { id: "L5", label: "요추 5번", y: 4 },
-  { id: "S1", label: "천추 1번", y: 5 },
+interface Vertebra {
+  id: string;
+  label: string;
+  y: number;
+}
+
+const cervicalVertebrae: Vertebra[] = [
+  { id: "C1", label: "경추 1번", y: 0 },
+  { id: "C2", label: "경추 2번", y: 1 },
+  { id: "C3", label: "경추 3번", y: 2 },
+  { id: "C4", label: "경추 4번", y: 3 },
+  { id: "C5", label: "경추 5번", y: 4 },
+  { id: "C6", label: "경추 6번", y: 5 },
+  { id: "C7", label: "경추 7번", y: 6 },
+  { id: "T1", label: "흉추 1번", y: 7 },
 ];
 
-function parseSurgeryLevel(level: string): { upper: string; lower: string } {
-  const match = level.match(/([LS]\d)-(\d)/);
-  if (match) {
-    const prefix = match[1][0];
-    return { upper: match[1], lower: `${prefix}${match[2]}` };
+const lumbarVertebrae: Vertebra[] = [
+  { id: "T12", label: "흉추 12번", y: 0 },
+  { id: "L1", label: "요추 1번", y: 1 },
+  { id: "L2", label: "요추 2번", y: 2 },
+  { id: "L3", label: "요추 3번", y: 3 },
+  { id: "L4", label: "요추 4번", y: 4 },
+  { id: "L5", label: "요추 5번", y: 5 },
+  { id: "S1", label: "천추 1번", y: 6 },
+];
+
+function parseSurgeryLevel(level: string): { segments: { upper: string; lower: string }[]; region: "cervical" | "lumbar" } {
+  const segments: { upper: string; lower: string }[] = [];
+  // Match patterns like C5-6, L4-5, C3-6, T12
+  const rangeMatch = level.match(/([CLST]\d{1,2})-(\d{1,2})/g);
+
+  if (rangeMatch) {
+    for (const m of rangeMatch) {
+      const parts = m.match(/([CLST])(\d{1,2})-(\d{1,2})/);
+      if (parts) {
+        const prefix = parts[1];
+        const upper = `${prefix}${parts[2]}`;
+        const lower = `${prefix}${parts[3]}`;
+        segments.push({ upper, lower });
+      }
+    }
   }
-  return { upper: "", lower: "" };
+
+  // Single level like T12
+  if (segments.length === 0) {
+    const singleMatch = level.match(/([CLST]\d{1,2})/);
+    if (singleMatch) {
+      segments.push({ upper: singleMatch[1], lower: singleMatch[1] });
+    }
+  }
+
+  const isCervical = level.startsWith("C");
+  return { segments, region: isCervical ? "cervical" : "lumbar" };
 }
 
 export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
-  const { upper, lower } = parseSurgeryLevel(surgeryLevel);
-  const discHighlightIndex = vertebrae.findIndex((v) => v.id === upper);
+  const { segments, region } = parseSurgeryLevel(surgeryLevel);
+  const vertebrae = region === "cervical" ? cervicalVertebrae : lumbarVertebrae;
+  const title = region === "cervical" ? "경추 다이어그램" : "요추-천추 다이어그램";
+  const spacing = 42;
+  const startY = 52;
+  const svgHeight = startY + vertebrae.length * spacing + 20;
+
+  // Build sets of highlighted vertebrae and discs
+  const highlightedVertebrae = new Set<string>();
+  const highlightedDiscs = new Set<string>(); // use upper vertebra id as key
+
+  for (const seg of segments) {
+    highlightedVertebrae.add(seg.upper);
+    highlightedVertebrae.add(seg.lower);
+
+    // Highlight all discs between upper and lower
+    const upperIdx = vertebrae.findIndex((v) => v.id === seg.upper);
+    const lowerIdx = vertebrae.findIndex((v) => v.id === seg.lower);
+    if (upperIdx >= 0 && lowerIdx >= 0) {
+      for (let i = Math.min(upperIdx, lowerIdx); i < Math.max(upperIdx, lowerIdx); i++) {
+        highlightedDiscs.add(vertebrae[i].id);
+      }
+      // For single vertebra, highlight the disc below
+      if (upperIdx === lowerIdx && upperIdx < vertebrae.length - 1) {
+        highlightedDiscs.add(vertebrae[upperIdx].id);
+      }
+    }
+  }
 
   return (
     <svg
-      viewBox="0 0 240 340"
+      viewBox={`0 0 240 ${svgHeight}`}
       className="w-full h-auto max-w-[200px]"
-      aria-label={`요추 다이어그램 - ${surgeryLevel} 수술 부위`}
+      aria-label={`${title} - ${surgeryLevel} 수술 부위`}
     >
       {/* Title */}
       <text x={120} y={18} textAnchor="middle" fontSize={13} fontWeight={600} fill="#374151">
-        요추-천추 다이어그램
+        {title}
       </text>
 
       {/* Spinal cord background */}
-      <rect x={112} y={28} width={16} height={280} rx={8} fill="#e0f2fe" opacity={0.5} />
+      <rect x={112} y={28} width={16} height={vertebrae.length * spacing + 10} rx={8} fill="#e0f2fe" opacity={0.5} />
 
       {vertebrae.map((v, i) => {
         const cx = 120;
-        const cy = 52 + i * 50;
-        const isUpper = v.id === upper;
-        const isLower = v.id === lower;
-        const isHighlighted = isUpper || isLower;
+        const cy = startY + i * spacing;
+        const isHighlighted = highlightedVertebrae.has(v.id);
         const showDisc = i < vertebrae.length - 1;
-        const isDiscHighlighted = i === discHighlightIndex;
+        const isDiscHighlighted = highlightedDiscs.has(v.id);
+
+        // Slightly smaller for cervical
+        const bodyW = region === "cervical" ? 56 : 64;
+        const bodyH = region === "cervical" ? 26 : 30;
+        const procRx = region === "cervical" ? 11 : 14;
+        const procRy = region === "cervical" ? 6 : 8;
+        const procOffset = region === "cervical" ? 40 : 48;
 
         return (
           <g key={v.id}>
             {/* Transverse processes */}
             <ellipse
-              cx={cx - 48}
+              cx={cx - procOffset}
               cy={cy}
-              rx={14}
-              ry={8}
+              rx={procRx}
+              ry={procRy}
               fill={isHighlighted ? "#dbeafe" : "#f1f5f9"}
               stroke={isHighlighted ? "#3b82f6" : "#d1d5db"}
               strokeWidth={1}
             />
             <ellipse
-              cx={cx + 48}
+              cx={cx + procOffset}
               cy={cy}
-              rx={14}
-              ry={8}
+              rx={procRx}
+              ry={procRy}
               fill={isHighlighted ? "#dbeafe" : "#f1f5f9"}
               stroke={isHighlighted ? "#3b82f6" : "#d1d5db"}
               strokeWidth={1}
@@ -73,10 +142,10 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
 
             {/* Vertebral body */}
             <rect
-              x={cx - 32}
-              y={cy - 15}
-              width={64}
-              height={30}
+              x={cx - bodyW / 2}
+              y={cy - bodyH / 2}
+              width={bodyW}
+              height={bodyH}
               rx={8}
               fill={isHighlighted ? "#dbeafe" : "#f8fafc"}
               stroke={isHighlighted ? "#2563eb" : "#cbd5e1"}
@@ -86,7 +155,7 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
             {/* Spinous process */}
             <rect
               x={cx - 5}
-              y={cy - 22}
+              y={cy - bodyH / 2 - 7}
               width={10}
               height={10}
               rx={3}
@@ -100,7 +169,7 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
               x={cx}
               y={cy + 4}
               textAnchor="middle"
-              fontSize={13}
+              fontSize={12}
               fontWeight={isHighlighted ? 700 : 500}
               fill={isHighlighted ? "#1d4ed8" : "#64748b"}
             >
@@ -109,10 +178,10 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
 
             {/* Korean label on the left */}
             <text
-              x={30}
+              x={28}
               y={cy + 4}
               textAnchor="middle"
-              fontSize={10}
+              fontSize={9}
               fill={isHighlighted ? "#1d4ed8" : "#94a3b8"}
               fontWeight={isHighlighted ? 600 : 400}
             >
@@ -123,14 +192,14 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
             {showDisc && (
               <g>
                 {isDiscHighlighted && (
-                  <ellipse cx={cx} cy={cy + 23} rx={28} ry={6} fill="#fecaca" opacity={0.5}>
+                  <ellipse cx={cx} cy={cy + bodyH / 2 + 5} rx={28} ry={6} fill="#fecaca" opacity={0.5}>
                     <animate attributeName="rx" values="26;30;26" dur="2s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite" />
                   </ellipse>
                 )}
                 <ellipse
                   cx={cx}
-                  cy={cy + 23}
+                  cy={cy + bodyH / 2 + 5}
                   rx={22}
                   ry={4}
                   fill={isDiscHighlighted ? "#ef4444" : "#d1d5db"}
@@ -139,12 +208,12 @@ export default function SpineAvatar({ surgeryLevel }: SpineAvatarProps) {
               </g>
             )}
 
-            {/* Surgery annotation */}
-            {isDiscHighlighted && (
+            {/* Surgery annotation - show only once for the first highlighted disc */}
+            {isDiscHighlighted && !highlightedDiscs.has(vertebrae[i - 1]?.id) && (
               <g>
-                <line x1={cx + 40} y1={cy + 23} x2={cx + 64} y2={cy + 23} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3 2" />
-                <rect x={cx + 64} y={cy + 12} width={52} height={22} rx={6} fill="#fef2f2" stroke="#fca5a5" strokeWidth={1} />
-                <text x={cx + 90} y={cy + 27} textAnchor="middle" fontSize={10} fontWeight={700} fill="#dc2626">
+                <line x1={cx + 36} y1={cy + bodyH / 2 + 5} x2={cx + 58} y2={cy + bodyH / 2 + 5} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3 2" />
+                <rect x={cx + 58} y={cy + bodyH / 2 - 6} width={52} height={22} rx={6} fill="#fef2f2" stroke="#fca5a5" strokeWidth={1} />
+                <text x={cx + 84} y={cy + bodyH / 2 + 9} textAnchor="middle" fontSize={10} fontWeight={700} fill="#dc2626">
                   수술 부위
                 </text>
               </g>

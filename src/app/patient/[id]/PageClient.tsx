@@ -1,60 +1,41 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import { mockPatient } from "@/data/mock-patient";
+import { getPatientById } from "@/data/mock-patient";
+import { getSurgeryTemplate } from "@/data/surgery-templates";
 import PatientCharacter, { SelfieCapture } from "@/components/avatar/PatientCharacter";
 import SpineAvatar from "@/components/avatar/SpineAvatar";
 import { ClinicalStage, DaySchedule } from "@/lib/types";
 import { formatDate, dDay } from "@/lib/utils";
 
-const DISCHARGE_KEY = "patient-discharged";
-const AVATAR_KEY = "patient-avatar";
-const CHECKLIST_KEY = "patient-checklist";
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
-// Inpatient schedule data
-const inpatientSchedule: DaySchedule[] = [
-  {
-    day: "입원일 (D-1)",
-    label: "2026-02-09",
-    rows: [
-      { time: "오전", activity: "입원 수속 및 병실 배정", icon: "🏥" },
-      { time: "오전", activity: "혈액검사, 소변검사, 심전도, 흉부 X-ray", icon: "🔬" },
-      { time: "오후", activity: "마취과 상담 및 수술 동의서 작성", icon: "📋" },
-      { time: "오후", activity: "수술 부위 피부 준비", icon: "🩹" },
-      { time: "자정~", activity: "금식 시작 (물 포함)", icon: "🚫" },
-    ],
-  },
-  {
-    day: "수술일 (D-Day)",
-    label: "2026-02-10",
-    rows: [
-      { time: "오전", activity: "수술 가운 환복, IV 확보", icon: "💉" },
-      { time: "오전", activity: "수술실 이동 → UBE 디스크 제거술 (약 1시간)", icon: "🔧" },
-      { time: "오후", activity: "회복실 → 병실 복귀", icon: "🛏️" },
-      { time: "오후", activity: "하지 감각/운동 기능 확인", icon: "🦵" },
-      { time: "저녁", activity: "안정 취하기, 통증 관리", icon: "💊" },
-    ],
-  },
-  {
-    day: "수술 후 1일 (POD#1)",
-    label: "2026-02-11",
-    rows: [
-      { time: "오전", activity: "보조기 착용 후 기립 시도", icon: "🚶" },
-      { time: "오전", activity: "단거리 보행 시작 (보행기 사용)", icon: "🏃" },
-      { time: "오전", activity: "식이 진행 (유동식 → 일반식)", icon: "🍽️" },
-      { time: "오후", activity: "배액관 제거 (의사 판단)", icon: "🩺" },
-      { time: "오후", activity: "퇴원 교육 및 약 수령", icon: "📦" },
-    ],
-  },
-];
-
-export default function PageClient() {
-  const patient = mockPatient;
+export default function PageClient({ id }: { id: string }) {
+  const patient = getPatientById(id);
   const [discharged, setDischarged] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [showDischargeConfirm, setShowDischargeConfirm] = useState(false);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+
+  const DISCHARGE_KEY = `patient-discharged-${id}`;
+  const AVATAR_KEY = `patient-avatar-${id}`;
+  const CHECKLIST_KEY = `patient-checklist-${id}`;
+
+  // Build inpatient schedule from template
+  const inpatientSchedule = useMemo<DaySchedule[]>(() => {
+    if (!patient) return [];
+    const template = getSurgeryTemplate(patient.surgery.type);
+    return template.inpatientSchedule.map((day) => ({
+      day: day.day,
+      label: addDays(patient.surgery.date, day.dateOffset),
+      rows: day.rows,
+    }));
+  }, [patient]);
 
   useEffect(() => {
     setDischarged(localStorage.getItem(DISCHARGE_KEY) === "true");
@@ -63,7 +44,15 @@ export default function PageClient() {
       const saved = localStorage.getItem(CHECKLIST_KEY);
       if (saved) setChecklist(JSON.parse(saved));
     } catch { /* ignore */ }
-  }, []);
+  }, [DISCHARGE_KEY, AVATAR_KEY, CHECKLIST_KEY]);
+
+  if (!patient) {
+    return (
+      <div className="animate-fade-in p-6 text-center">
+        <p className="text-gray-500">환자 정보를 찾을 수 없습니다.</p>
+      </div>
+    );
+  }
 
   const inpatientStages = patient.stages.filter((s) => s.phase === "inpatient");
   const outpatientStages = patient.stages.filter((s) => s.phase === "outpatient");

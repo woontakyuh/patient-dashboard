@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { odiSections, eq5dDimensions, joaItems } from "@/data/prom-instruments";
-import type { PromResult } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
+import { odiSections, ndiSections, eq5dDimensions, joaItems } from "@/data/prom-instruments";
+import { getPatientById } from "@/data/mock-patient";
+import { getSurgeryTemplate } from "@/data/surgery-templates";
+import type { PromResult, PromInstrumentId } from "@/lib/types";
 
 const STORAGE_KEY = "prom-history-v2";
 
-const tabs = [
+const allTabs: { id: PromInstrumentId; label: string }[] = [
   { id: "vas", label: "VAS" },
   { id: "odi", label: "ODI" },
+  { id: "ndi", label: "NDI" },
   { id: "joa", label: "JOA" },
   { id: "eq5d", label: "EQ-5D" },
   { id: "eqvas", label: "EQ-VAS" },
-] as const;
-
-type TabId = (typeof tabs)[number]["id"];
+];
 
 function getVasEmoji(value: number) {
   if (value <= 1) return "\u{1F60A}";
@@ -38,11 +39,25 @@ function saveHistory(entries: PromResult[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-export default function PromClient() {
-  const [activeTab, setActiveTab] = useState<TabId>("vas");
-  const [vasBack, setVasBack] = useState(0);
-  const [vasLeg, setVasLeg] = useState(0);
+export default function PromClient({ id }: { id: string }) {
+  const patient = getPatientById(id);
+  const template = patient ? getSurgeryTemplate(patient.surgery.type) : null;
+
+  // Filter tabs based on patient's promInstruments
+  const tabs = useMemo(() => {
+    if (!patient) return allTabs;
+    return allTabs.filter((t) => patient.promInstruments.includes(t.id));
+  }, [patient]);
+
+  const vasScales = template?.vasConfig.scales ?? [
+    { id: "vas_back", label: "허리 통증" },
+    { id: "vas_leg", label: "다리 통증/저림" },
+  ];
+
+  const [activeTab, setActiveTab] = useState<PromInstrumentId>("vas");
+  const [vasValues, setVasValues] = useState<Record<string, number>>({});
   const [odiScores, setOdiScores] = useState<Record<string, number>>({});
+  const [ndiScores, setNdiScores] = useState<Record<string, number>>({});
   const [joaScores, setJoaScores] = useState<Record<string, number>>({});
   const [eq5dScores, setEq5dScores] = useState<Record<string, number>>({});
   const [eqVas, setEqVas] = useState(50);
@@ -53,9 +68,24 @@ export default function PromClient() {
     setHistory(getHistory());
   }, []);
 
+  // Initialize VAS values
+  useEffect(() => {
+    const init: Record<string, number> = {};
+    vasScales.forEach((s) => { init[s.id] = 0; });
+    setVasValues(init);
+  }, []);
+
+  const hasOdi = patient?.promInstruments.includes("odi") ?? false;
+  const hasNdi = patient?.promInstruments.includes("ndi") ?? false;
+  const hasJoa = patient?.promInstruments.includes("joa") ?? false;
+
   const odiCompleted = Object.keys(odiScores).length;
   const odiTotal = Object.values(odiScores).reduce((a, b) => a + b, 0);
   const odiPercent = odiCompleted === 10 ? Math.round((odiTotal / 50) * 100) : 0;
+
+  const ndiCompleted = Object.keys(ndiScores).length;
+  const ndiTotal = Object.values(ndiScores).reduce((a, b) => a + b, 0);
+  const ndiPercent = ndiCompleted === 10 ? Math.round((ndiTotal / 50) * 100) : 0;
 
   const joaCompleted = Object.keys(joaScores).length;
   const joaTotal = Object.values(joaScores).reduce((a, b) => a + b, 0);
@@ -63,18 +93,35 @@ export default function PromClient() {
   const eq5dCompleted = Object.keys(eq5dScores).length;
   const eq5dCode = eq5dDimensions.map((d) => eq5dScores[d.id] ?? 0).join("");
 
-  const allComplete = odiCompleted === 10 && joaCompleted === joaItems.length && eq5dCompleted === 5;
+  const allComplete =
+    (!hasOdi || odiCompleted === 10) &&
+    (!hasNdi || ndiCompleted === 10) &&
+    (!hasJoa || joaCompleted === joaItems.length) &&
+    eq5dCompleted === 5;
+
+  // Find next/prev tabs
+  const currentTabIndex = tabs.findIndex((t) => t.id === activeTab);
+  const prevTab = currentTabIndex > 0 ? tabs[currentTabIndex - 1] : null;
+  const nextTab = currentTabIndex < tabs.length - 1 ? tabs[currentTabIndex + 1] : null;
 
   function handleSubmit() {
     const entry: PromResult = {
-      patientId: "P001",
+      patientId: id,
       date: new Date().toISOString().slice(0, 10),
-      vas_back: vasBack,
-      vas_leg: vasLeg,
-      odi_scores: odiSections.map((s) => odiScores[s.id] ?? 0),
-      odi_total_percent: odiPercent,
-      joa_score: joaTotal,
-      joa_recovery_rate: null,
+      vas_back: vasValues[vasScales[0]?.id] ?? 0,
+      vas_leg: vasValues[vasScales[1]?.id] ?? 0,
+      ...(hasOdi ? {
+        odi_scores: odiSections.map((s) => odiScores[s.id] ?? 0),
+        odi_total_percent: odiPercent,
+      } : {}),
+      ...(hasNdi ? {
+        ndi_scores: ndiSections.map((s) => ndiScores[s.id] ?? 0),
+        ndi_total_percent: ndiPercent,
+      } : {}),
+      ...(hasJoa ? {
+        joa_score: joaTotal,
+        joa_recovery_rate: null,
+      } : {}),
       eq5d_dimensions: eq5dDimensions.map((d) => eq5dScores[d.id] ?? 1),
       eq5d_code: eq5dCode,
       eq_vas: eqVas,
@@ -87,14 +134,24 @@ export default function PromClient() {
   }
 
   function handleReset() {
-    setVasBack(0);
-    setVasLeg(0);
+    const init: Record<string, number> = {};
+    vasScales.forEach((s) => { init[s.id] = 0; });
+    setVasValues(init);
     setOdiScores({});
+    setNdiScores({});
     setJoaScores({});
     setEq5dScores({});
     setEqVas(50);
     setSubmitted(false);
     setActiveTab("vas");
+  }
+
+  if (!patient) {
+    return (
+      <div className="animate-fade-in p-6 text-center">
+        <p className="text-gray-500">환자 정보를 찾을 수 없습니다.</p>
+      </div>
+    );
   }
 
   if (submitted) {
@@ -106,10 +163,12 @@ export default function PromClient() {
           <p className="text-sm text-gray-500 mb-4">감사합니다. 결과가 저장되었습니다.</p>
 
           <div className="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-2">
-            <p><span className="text-gray-400">허리 VAS</span> <span className="font-semibold">{vasBack}/10</span></p>
-            <p><span className="text-gray-400">다리 VAS</span> <span className="font-semibold">{vasLeg}/10</span></p>
-            <p><span className="text-gray-400">ODI</span> <span className="font-semibold">{odiPercent}%</span></p>
-            <p><span className="text-gray-400">JOA</span> <span className="font-semibold">{joaTotal}점</span></p>
+            {vasScales.map((s) => (
+              <p key={s.id}><span className="text-gray-400">{s.label}</span> <span className="font-semibold">{vasValues[s.id] ?? 0}/10</span></p>
+            ))}
+            {hasOdi && <p><span className="text-gray-400">ODI</span> <span className="font-semibold">{odiPercent}%</span></p>}
+            {hasNdi && <p><span className="text-gray-400">NDI</span> <span className="font-semibold">{ndiPercent}%</span></p>}
+            {hasJoa && <p><span className="text-gray-400">JOA</span> <span className="font-semibold">{joaTotal}점</span></p>}
             <p><span className="text-gray-400">EQ-5D</span> <span className="font-semibold">{eq5dCode}</span></p>
             <p><span className="text-gray-400">EQ-VAS</span> <span className="font-semibold">{eqVas}/100</span></p>
           </div>
@@ -136,6 +195,7 @@ export default function PromClient() {
           let done = false;
           if (tab.id === "vas") done = true;
           if (tab.id === "odi") done = odiCompleted === 10;
+          if (tab.id === "ndi") done = ndiCompleted === 10;
           if (tab.id === "joa") done = joaCompleted === joaItems.length;
           if (tab.id === "eq5d") done = eq5dCompleted === 5;
           if (tab.id === "eqvas") done = true;
@@ -166,54 +226,36 @@ export default function PromClient() {
             VAS 통증 수준
           </h2>
 
-          {/* Back pain */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="text-sm font-medium text-gray-700">허리 통증</label>
-              <span className="text-2xl">{getVasEmoji(vasBack)}</span>
+          {vasScales.map((scale) => (
+            <div key={scale.id}>
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-sm font-medium text-gray-700">{scale.label}</label>
+                <span className="text-2xl">{getVasEmoji(vasValues[scale.id] ?? 0)}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                value={vasValues[scale.id] ?? 0}
+                onChange={(e) => setVasValues((prev) => ({ ...prev, [scale.id]: Number(e.target.value) }))}
+                className="w-full vas-slider"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+                <span>0 (통증 없음)</span>
+                <span className="text-lg font-bold text-blue-600">{vasValues[scale.id] ?? 0}</span>
+                <span>10 (극심한 통증)</span>
+              </div>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={vasBack}
-              onChange={(e) => setVasBack(Number(e.target.value))}
-              className="w-full vas-slider"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1.5">
-              <span>0 (통증 없음)</span>
-              <span className="text-lg font-bold text-blue-600">{vasBack}</span>
-              <span>10 (극심한 통증)</span>
-            </div>
-          </div>
+          ))}
 
-          {/* Leg pain */}
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="text-sm font-medium text-gray-700">다리 통증 / 저림</label>
-              <span className="text-2xl">{getVasEmoji(vasLeg)}</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={vasLeg}
-              onChange={(e) => setVasLeg(Number(e.target.value))}
-              className="w-full vas-slider"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1.5">
-              <span>0 (통증 없음)</span>
-              <span className="text-lg font-bold text-blue-600">{vasLeg}</span>
-              <span>10 (극심한 통증)</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveTab("odi")}
-            className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
-          >
-            다음: ODI &rarr;
-          </button>
+          {nextTab && (
+            <button
+              onClick={() => setActiveTab(nextTab.id)}
+              className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
+            >
+              다음: {nextTab.label} &rarr;
+            </button>
+          )}
         </div>
       )}
 
@@ -281,18 +323,94 @@ export default function PromClient() {
           )}
 
           <div className="flex gap-2 mt-5">
-            <button
-              onClick={() => setActiveTab("vas")}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-            >
-              &larr; VAS
-            </button>
-            <button
-              onClick={() => setActiveTab("joa")}
-              className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
-            >
-              JOA &rarr;
-            </button>
+            {prevTab && (
+              <button onClick={() => setActiveTab(prevTab.id)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
+                &larr; {prevTab.label}
+              </button>
+            )}
+            {nextTab && (
+              <button onClick={() => setActiveTab(nextTab.id)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
+                {nextTab.label} &rarr;
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* NDI Tab */}
+      {activeTab === "ndi" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              NDI 목 장애 지수
+            </h2>
+            <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+              {ndiCompleted}/10 완료
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-400 mb-5">
+            각 항목에서 오늘 본인의 상태에 가장 가까운 것을 하나만 선택해 주세요.
+          </p>
+
+          <div className="space-y-6">
+            {ndiSections.map((section) => (
+              <div key={section.id} className="border-b border-gray-50 pb-5 last:border-0 last:pb-0">
+                <p className="text-sm font-semibold text-gray-800 mb-2.5">
+                  {section.title}
+                </p>
+                <div className="space-y-1.5">
+                  {section.options.map((opt, i) => (
+                    <label
+                      key={i}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg text-sm cursor-pointer transition-colors ${
+                        ndiScores[section.id] === i
+                          ? "bg-blue-50 border border-blue-200"
+                          : "hover:bg-gray-50 border border-transparent"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`ndi-${section.id}`}
+                        checked={ndiScores[section.id] === i}
+                        onChange={() =>
+                          setNdiScores((prev) => ({ ...prev, [section.id]: i }))
+                        }
+                        className="accent-blue-600 mt-0.5 flex-shrink-0"
+                      />
+                      <span className="text-gray-700 leading-snug">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {ndiCompleted === 10 && (
+            <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
+              <p className="text-sm text-gray-600">
+                NDI 점수: <span className="font-bold text-blue-700">{ndiTotal}/50 ({ndiPercent}%)</span>
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {ndiPercent <= 20 ? "최소 장애" :
+                 ndiPercent <= 40 ? "중등도 장애" :
+                 ndiPercent <= 60 ? "중증 장애" :
+                 ndiPercent <= 80 ? "심각한 장애" : "완전 장애"}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-5">
+            {prevTab && (
+              <button onClick={() => setActiveTab(prevTab.id)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
+                &larr; {prevTab.label}
+              </button>
+            )}
+            {nextTab && (
+              <button onClick={() => setActiveTab(nextTab.id)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
+                {nextTab.label} &rarr;
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -358,18 +476,16 @@ export default function PromClient() {
           )}
 
           <div className="flex gap-2 mt-5">
-            <button
-              onClick={() => setActiveTab("odi")}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-            >
-              &larr; ODI
-            </button>
-            <button
-              onClick={() => setActiveTab("eq5d")}
-              className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
-            >
-              EQ-5D &rarr;
-            </button>
+            {prevTab && (
+              <button onClick={() => setActiveTab(prevTab.id)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
+                &larr; {prevTab.label}
+              </button>
+            )}
+            {nextTab && (
+              <button onClick={() => setActiveTab(nextTab.id)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
+                {nextTab.label} &rarr;
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -432,18 +548,16 @@ export default function PromClient() {
           )}
 
           <div className="flex gap-2 mt-5">
-            <button
-              onClick={() => setActiveTab("joa")}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-            >
-              &larr; JOA
-            </button>
-            <button
-              onClick={() => setActiveTab("eqvas")}
-              className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors"
-            >
-              EQ-VAS &rarr;
-            </button>
+            {prevTab && (
+              <button onClick={() => setActiveTab(prevTab.id)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
+                &larr; {prevTab.label}
+              </button>
+            )}
+            {nextTab && (
+              <button onClick={() => setActiveTab(nextTab.id)} className="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors">
+                {nextTab.label} &rarr;
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -489,12 +603,11 @@ export default function PromClient() {
           </div>
 
           <div className="flex gap-2 mt-8">
-            <button
-              onClick={() => setActiveTab("eq5d")}
-              className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-            >
-              &larr; EQ-5D
-            </button>
+            {prevTab && (
+              <button onClick={() => setActiveTab(prevTab.id)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
+                &larr; {prevTab.label}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -506,7 +619,7 @@ export default function PromClient() {
         className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
         {!allComplete
-          ? `미완료 항목이 있습니다 (ODI ${odiCompleted}/10, JOA ${joaCompleted}/${joaItems.length}, EQ-5D ${eq5dCompleted}/5)`
+          ? "미완료 항목이 있습니다"
           : "설문 제출"}
       </button>
     </div>

@@ -3,12 +3,12 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { mockPatient } from "@/data/mock-patient";
+import { getPatientById } from "@/data/mock-patient";
 import { formatDate } from "@/lib/utils";
 
-export default function TimelineClient() {
+export default function TimelineClient({ id }: { id: string }) {
   const router = useRouter();
-  const patient = mockPatient;
+  const patient = getPatientById(id);
   const currentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,6 +16,14 @@ export default function TimelineClient() {
       currentRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
+
+  if (!patient) {
+    return (
+      <div className="animate-fade-in p-6 text-center">
+        <p className="text-gray-500">환자 정보를 찾을 수 없습니다.</p>
+      </div>
+    );
+  }
 
   const inpatient = patient.stages.filter((s) => s.phase === "inpatient");
   const outpatient = patient.stages.filter((s) => s.phase === "outpatient");
