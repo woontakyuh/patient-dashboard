@@ -16,8 +16,8 @@ function computeStatus(dateStr: string): StageStatus {
   const d = new Date(dateStr);
   d.setHours(0, 0, 0, 0);
   const diff = (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-  if (diff < -1) return "completed";
-  if (diff <= 1) return "current";
+  if (diff < 0) return "completed";
+  if (diff === 0) return "current";
   return "upcoming";
 }
 

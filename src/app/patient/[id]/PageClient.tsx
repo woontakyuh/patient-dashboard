@@ -5,7 +5,6 @@ import Link from "next/link";
 import { getPatientById } from "@/data/mock-patient";
 import { getSurgeryTemplate } from "@/data/surgery-templates";
 import PatientCharacter, { SelfieCapture } from "@/components/avatar/PatientCharacter";
-import SpineAvatar from "@/components/avatar/SpineAvatar";
 import { ClinicalStage, DaySchedule } from "@/lib/types";
 import { formatDate, dDay } from "@/lib/utils";
 
@@ -346,15 +345,6 @@ export default function PageClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* Spine diagram - mobile */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          수술 부위
-        </h2>
-        <div className="flex justify-center">
-          <SpineAvatar surgeryLevel={patient.diagnosis.code} />
-        </div>
-      </div>
     </div>
   );
 }
