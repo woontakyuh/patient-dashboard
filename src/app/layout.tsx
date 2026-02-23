@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "다보스 병원 환자 가이드",
+  title: "SpineTrack — 나의 수술 여정",
   description: "척추 수술 환자를 위한 개인 맞춤형 대시보드",
 };
 
@@ -32,8 +32,8 @@ export default function RootLayout({
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200">
           <div className="max-w-[480px] mx-auto px-4 h-14 flex items-center justify-between">
-            <span className="text-base font-bold text-blue-600 tracking-tight">
-              다보스 병원
+            <span className="text-base font-bold text-navy-500 tracking-tight">
+              SpineTrack
             </span>
           </div>
         </header>

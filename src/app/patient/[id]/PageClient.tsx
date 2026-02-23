@@ -1,49 +1,68 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getPatientById } from "@/data/mock-patient";
-import { getSurgeryTemplate } from "@/data/surgery-templates";
 import PatientCharacter, { SelfieCapture } from "@/components/avatar/PatientCharacter";
-import { ClinicalStage, DaySchedule } from "@/lib/types";
 import { formatDate, dDay } from "@/lib/utils";
+import {
+  JOURNEY_STAGES,
+  computeJourneyStage,
+  getJourneyStageStatus,
+  getJourneyProgress,
+} from "@/data/journey-stages";
+import type { JourneyStageId } from "@/lib/types";
+import {
+  ClipboardCheck,
+  Stethoscope,
+  Bed,
+  Footprints,
+  TrendingUp,
+  Award,
+  Check,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  BookOpen,
+  MessageCircle,
+  AlertTriangle,
+} from "lucide-react";
 
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+// lucide icon lookup
+const STAGE_ICONS: Record<string, React.ElementType> = {
+  ClipboardCheck,
+  Stethoscope,
+  Bed,
+  Footprints,
+  TrendingUp,
+  Award,
+};
 
 export default function PageClient({ id }: { id: string }) {
   const patient = getPatientById(id);
-  const [discharged, setDischarged] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [showDischargeConfirm, setShowDischargeConfirm] = useState(false);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const [expandedStage, setExpandedStage] = useState<JourneyStageId | null>(null);
 
-  const DISCHARGE_KEY = `patient-discharged-${id}`;
   const AVATAR_KEY = `patient-avatar-${id}`;
-  const CHECKLIST_KEY = `patient-checklist-${id}`;
+  const CHECKLIST_KEY = `patient-checklist-v2-${id}`;
 
-  // Build inpatient schedule from template
-  const inpatientSchedule = useMemo<DaySchedule[]>(() => {
-    if (!patient) return [];
-    const template = getSurgeryTemplate(patient.surgery.type);
-    return template.inpatientSchedule.map((day) => ({
-      day: day.day,
-      label: addDays(patient.surgery.date, day.dateOffset),
-      rows: day.rows,
-    }));
-  }, [patient]);
+  const currentJourneyId = patient ? computeJourneyStage(patient.surgery.date) : "decision";
 
   useEffect(() => {
-    setDischarged(localStorage.getItem(DISCHARGE_KEY) === "true");
     setPhotoUrl(localStorage.getItem(AVATAR_KEY));
     try {
       const saved = localStorage.getItem(CHECKLIST_KEY);
       if (saved) setChecklist(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, [DISCHARGE_KEY, AVATAR_KEY, CHECKLIST_KEY]);
+    } catch {
+      /* ignore */
+    }
+  }, [AVATAR_KEY, CHECKLIST_KEY]);
+
+  // Auto-expand current stage on first render
+  useEffect(() => {
+    setExpandedStage(currentJourneyId);
+  }, [currentJourneyId]);
 
   if (!patient) {
     return (
@@ -53,20 +72,10 @@ export default function PageClient({ id }: { id: string }) {
     );
   }
 
-  const inpatientStages = patient.stages.filter((s) => s.phase === "inpatient");
-  const outpatientStages = patient.stages.filter((s) => s.phase === "outpatient");
-  const currentStage = patient.stages.find((s) => s.status === "current");
-
-  function handleDischarge() {
-    localStorage.setItem(DISCHARGE_KEY, "true");
-    setDischarged(true);
-    setShowDischargeConfirm(false);
-  }
-
-  function handleUndoDischarge() {
-    localStorage.removeItem(DISCHARGE_KEY);
-    setDischarged(false);
-  }
+  const progress = getJourneyProgress(patient.surgery.date);
+  const nextFollowUp = patient.followUps.find(
+    (f) => new Date(f.date) > new Date()
+  );
 
   function toggleCheck(key: string) {
     setChecklist((prev) => {
@@ -76,355 +85,276 @@ export default function PageClient({ id }: { id: string }) {
     });
   }
 
-  // Post-op months calculation
-  const surgeryDate = new Date(patient.surgery.date);
-  const now = new Date();
-  const postOpMonths = Math.max(
-    0,
-    Math.floor((now.getTime() - surgeryDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
-  );
-
-  // Next follow-up
-  const nextFollowUp = patient.followUps.find((f) => new Date(f.date) > now);
+  const currentStage = patient.stages.find((s) => s.status === "current");
 
   return (
     <div className="animate-fade-in space-y-4">
-      {/* ── Patient Summary (Compact) ── */}
+      {/* ── Patient Summary Card ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <div className="flex items-start gap-3">
           <PatientCharacter
             photoUrl={photoUrl}
-            size={60}
-            mood={discharged ? "recovering" : "hospital"}
-            showBrace={!discharged}
+            size={56}
+            mood={
+              currentJourneyId === "full_recovery"
+                ? "happy"
+                : currentJourneyId === "surgery"
+                  ? "hospital"
+                  : "recovering"
+            }
+            showBrace={
+              currentJourneyId !== "decision" &&
+              currentJourneyId !== "full_recovery"
+            }
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">{patient.name}</h1>
+              <h1 className="text-lg font-bold text-gray-900">
+                {patient.name}
+              </h1>
               <span className="text-xs text-gray-400">{patient.age}세</span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">{patient.diagnosis.nameKo}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {patient.diagnosis.nameKo}
+            </p>
             <p className="text-xs text-gray-400">{patient.surgery.nameKo}</p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-xs text-gray-400">수술일</span>
               <span className="text-xs font-medium text-gray-700">
                 {formatDate(patient.surgery.date)}
               </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-700">
                 {dDay(patient.surgery.date)}
               </span>
             </div>
-            {discharged && (
-              <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
-                퇴원 완료 &middot; 수술 후 {postOpMonths}개월
-              </span>
-            )}
           </div>
         </div>
         <SelfieCapture onCapture={(url) => setPhotoUrl(url)} />
       </div>
 
-      {/* ── D-day Card (Next Follow-up) ── */}
-      {discharged && nextFollowUp && (
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 text-white">
+      {/* ── Progress Bar ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-navy-500">
+            나의 수술 여정
+          </span>
+          <span className="text-xs font-bold text-teal-600">{progress}%</span>
+        </div>
+        <div className="w-full bg-gray-100 rounded-full h-2.5">
+          <div
+            className="bg-gradient-to-r from-teal-400 to-teal-600 h-2.5 rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* ── Next Follow-up ── */}
+      {nextFollowUp && (
+        <div className="bg-gradient-to-r from-navy-500 to-teal-500 rounded-2xl p-4 text-white">
           <p className="text-xs opacity-80">다음 외래 예약</p>
           <div className="flex items-center justify-between mt-1">
             <div>
-              <p className="text-lg font-bold">{nextFollowUp.label}</p>
-              <p className="text-xs opacity-80">{formatDate(nextFollowUp.date)}</p>
+              <p className="text-base font-bold">{nextFollowUp.label}</p>
+              <p className="text-xs opacity-80">
+                {formatDate(nextFollowUp.date)}
+              </p>
             </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold">{dDay(nextFollowUp.date)}</p>
-            </div>
+            <p className="text-2xl font-bold">{dDay(nextFollowUp.date)}</p>
           </div>
         </div>
       )}
 
-      {/* ── Current Stage Badge ── */}
-      {currentStage && !discharged && (
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-            <span className="text-xs font-semibold text-blue-600">현재 단계</span>
-          </div>
-          <Link
-            href={`/patient/${patient.id}/instructions/${currentStage.id}`}
-            className="text-sm font-bold text-blue-800 hover:underline"
-          >
-            {currentStage.title} &rarr;
-          </Link>
-        </div>
-      )}
+      {/* ── Journey Timeline ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+          수술 여정 타임라인
+        </h2>
 
-      {/* ── Inpatient Journey (shown when not discharged) ── */}
-      {!discharged && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            입원 중 수술 경로
-          </h2>
-          <InpatientTimeline
-            stages={inpatientStages}
-            patientId={patient.id}
-            photoUrl={photoUrl}
-          />
+        <div className="relative">
+          {JOURNEY_STAGES.map((stage, i) => {
+            const status = getJourneyStageStatus(stage.id, currentJourneyId);
+            const isExpanded = expandedStage === stage.id;
+            const isLast = i === JOURNEY_STAGES.length - 1;
+            const IconComponent = STAGE_ICONS[stage.icon] || ClipboardCheck;
 
-          {/* Discharge button */}
-          <div className="mt-4 pt-3 border-t border-gray-100">
-            {!showDischargeConfirm ? (
-              <button
-                onClick={() => setShowDischargeConfirm(true)}
-                className="w-full px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
-                </svg>
-                퇴원하기
-              </button>
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                <p className="text-sm text-green-800 font-medium mb-2">퇴원 처리를 하시겠습니까?</p>
-                <div className="flex gap-2">
-                  <button onClick={handleDischarge} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700">
-                    네, 퇴원합니다
-                  </button>
-                  <button onClick={() => setShowDischargeConfirm(false)} className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-50">
-                    취소
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Inpatient Schedule Summary ── */}
-      {!discharged && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            입원 일정 요약
-          </h2>
-          <div className="space-y-4">
-            {inpatientSchedule.map((day) => (
-              <div key={day.day}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-bold text-gray-800">{day.day}</span>
-                  <span className="text-[10px] text-gray-400">{formatDate(day.label)}</span>
-                </div>
-                <div className="space-y-1">
-                  {day.rows.map((row, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm py-1.5 px-2 rounded-lg hover:bg-gray-50">
-                      <span className="text-base flex-shrink-0">{row.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-gray-700">{row.activity}</span>
-                      </div>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">{row.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Checklist (Dos from current stage) ── */}
-      {currentStage && !discharged && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              오늘의 체크리스트
-            </h2>
-            <Link
-              href={`/patient/${patient.id}/instructions/${currentStage.id}`}
-              className="text-xs text-blue-600 font-medium hover:underline"
-            >
-              자세히 &rarr;
-            </Link>
-          </div>
-          <ul className="space-y-2">
-            {currentStage.dos.map((item, i) => {
-              const key = `${currentStage.id}-do-${i}`;
-              const checked = !!checklist[key];
-              return (
-                <li key={i}>
+            return (
+              <div key={stage.id} className="flex">
+                {/* Timeline line + node */}
+                <div className="flex flex-col items-center mr-3 relative">
                   <button
-                    onClick={() => toggleCheck(key)}
-                    className={`w-full flex items-start gap-2.5 p-2.5 rounded-lg text-sm text-left transition-colors ${
-                      checked ? "bg-green-50" : "hover:bg-gray-50"
+                    onClick={() =>
+                      setExpandedStage(isExpanded ? null : stage.id)
+                    }
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      status === "completed"
+                        ? "bg-green-500 text-white"
+                        : status === "current"
+                          ? "bg-teal-500 text-white ring-4 ring-teal-100 animate-pulse"
+                          : "bg-gray-200 text-gray-400"
                     }`}
                   >
-                    <span className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                      checked ? "bg-green-500 border-green-500 text-white" : "border-gray-300"
-                    }`}>
-                      {checked && (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className={checked ? "text-gray-400 line-through" : "text-gray-700"}>
-                      {item}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* Warnings */}
-          {currentStage.warnings.length > 0 && (
-            <div className="mt-3 bg-amber-50/50 border border-amber-100 rounded-xl p-3">
-              <h3 className="text-xs font-semibold text-amber-700 mb-1.5 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                주의사항
-              </h3>
-              <ul className="space-y-1">
-                {currentStage.warnings.map((w, i) => (
-                  <li key={i} className="text-xs text-amber-700">&bull; {w}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Post-Discharge Outpatient View ── */}
-      {discharged && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              외래 추적 일정
-            </h2>
-            <button
-              onClick={handleUndoDischarge}
-              className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              입원 화면으로
-            </button>
-          </div>
-
-          <div className="flex flex-col items-center mb-5">
-            <PatientCharacter photoUrl={photoUrl} size={100} mood="happy" showBrace={false} />
-            <p className="mt-2 text-lg font-bold text-blue-600">수술 후 {postOpMonths}개월</p>
-            <p className="text-xs text-gray-400">{patient.surgery.nameKo} ({formatDate(patient.surgery.date)})</p>
-          </div>
-
-          <div className="space-y-2">
-            {outpatientStages.map((stage) => {
-              const stageDate = stage.date ? new Date(stage.date) : null;
-              const isPast = stageDate && stageDate < now;
-              return (
-                <Link
-                  key={stage.id}
-                  href={`/patient/${patient.id}/instructions/${stage.id}`}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all hover:shadow-sm ${
-                    isPast
-                      ? "bg-green-50 border-green-200"
-                      : "bg-white border-gray-200 hover:border-blue-200"
-                  }`}
-                >
-                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isPast ? "bg-green-500" : "bg-gray-300"}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">{stage.title}</p>
-                    {stage.date && <p className="text-[10px] text-gray-400">{formatDate(stage.date)}</p>}
-                  </div>
-                  {stage.date && !isPast && (
-                    <span className="text-xs font-medium text-blue-600">{dDay(stage.date)}</span>
-                  )}
-                  {isPast && (
-                    <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-// ── Inpatient Timeline ──
-function InpatientTimeline({
-  stages,
-  patientId,
-  photoUrl,
-}: {
-  stages: ClinicalStage[];
-  patientId: string;
-  photoUrl: string | null;
-}) {
-  const currentNodeRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (currentNodeRef.current) {
-      currentNodeRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-  }, []);
-
-  return (
-    <div className="relative">
-      {/* Vertical timeline */}
-      <div className="space-y-0">
-        {stages.map((stage, i) => {
-          const isLast = i === stages.length - 1;
-          const isCurrent = stage.status === "current";
-          const isCompleted = stage.status === "completed";
-
-          return (
-            <div key={stage.id} className="flex" ref={isCurrent ? currentNodeRef : undefined}>
-              <div className="flex flex-col items-center mr-3 relative">
-                {isCurrent && (
-                  <div className="absolute -left-7 -top-0.5 z-10">
-                    <div className="animate-walk">
-                      <PatientCharacter photoUrl={photoUrl} size={32} mood="hospital" />
-                    </div>
-                  </div>
-                )}
-                <Link href={`/patient/${patientId}/instructions/${stage.id}`}>
-                  <div
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-xs transition-transform hover:scale-110 ${
-                      isCompleted ? "bg-green-500 border-green-600" :
-                      isCurrent ? "bg-blue-600 border-blue-700 animate-pulse-ring" :
-                      "bg-gray-300 border-gray-400"
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
+                    {status === "completed" ? (
+                      <Check className="w-5 h-5" />
+                    ) : status === "upcoming" ? (
+                      <Lock className="w-4 h-4" />
                     ) : (
-                      <span className="text-[10px] font-bold">{i + 1}</span>
+                      <IconComponent className="w-5 h-5" />
                     )}
-                  </div>
-                </Link>
-                {!isLast && (
-                  <div className={`w-0.5 h-8 ${isCompleted ? "bg-green-400" : "bg-gray-200"}`} />
-                )}
+                  </button>
+                  {!isLast && (
+                    <div
+                      className={`w-0.5 flex-1 min-h-[24px] ${
+                        status === "completed" ? "bg-green-400" : "bg-gray-200"
+                      }`}
+                    />
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className={`flex-1 pb-4 ${isLast ? "pb-0" : ""}`}>
+                  <button
+                    onClick={() =>
+                      setExpandedStage(isExpanded ? null : stage.id)
+                    }
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p
+                          className={`text-sm font-semibold ${
+                            status === "completed"
+                              ? "text-green-700"
+                              : status === "current"
+                                ? "text-teal-700"
+                                : "text-gray-400"
+                          }`}
+                        >
+                          {stage.titleKo}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {stage.subtitle}
+                        </p>
+                      </div>
+                      {status !== "upcoming" &&
+                        (isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        ))}
+                    </div>
+                  </button>
+
+                  {/* Expanded panel */}
+                  {isExpanded && status !== "upcoming" && (
+                    <div className="mt-2 space-y-3 animate-fade-in">
+                      <p className="text-xs text-gray-600">
+                        {stage.description}
+                      </p>
+
+                      {/* Tasks checklist */}
+                      <div className="space-y-1.5">
+                        {stage.tasks.map((task, ti) => {
+                          const key = `journey-${stage.id}-${ti}`;
+                          const checked = !!checklist[key];
+                          return (
+                            <button
+                              key={ti}
+                              onClick={() => toggleCheck(key)}
+                              className={`w-full flex items-start gap-2 p-2 rounded-lg text-xs text-left transition-colors ${
+                                checked ? "bg-green-50" : "hover:bg-gray-50"
+                              }`}
+                            >
+                              <span
+                                className={`mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                                  checked
+                                    ? "bg-green-500 border-green-500 text-white"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {checked && <Check className="w-2.5 h-2.5" />}
+                              </span>
+                              <span
+                                className={
+                                  checked
+                                    ? "text-gray-400 line-through"
+                                    : "text-gray-700"
+                                }
+                              >
+                                {task}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Quick links */}
+                      <div className="flex gap-2">
+                        {currentStage &&
+                          stage.clinicalStageIds.includes(currentStage.id) && (
+                            <Link
+                              href={`/patient/${patient.id}/instructions/${currentStage.id}`}
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-[10px] font-semibold hover:bg-teal-100 transition-colors"
+                            >
+                              <BookOpen className="w-3 h-3" />
+                              상세 안내
+                            </Link>
+                          )}
+                        <Link
+                          href={`/patient/${patient.id}/education`}
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-50 text-navy-500 rounded-lg text-[10px] font-semibold hover:bg-navy-100 transition-colors"
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          교육 자료
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <Link
-                href={`/patient/${patientId}/instructions/${stage.id}`}
-                className="flex-1 pb-3 group"
-              >
-                <p className={`text-sm leading-tight group-hover:underline ${
-                  isCompleted ? "text-green-700 font-medium" :
-                  isCurrent ? "text-blue-700 font-bold" :
-                  "text-gray-500"
-                }`}>
-                  {stage.title}
-                </p>
-                {stage.date && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(stage.date)}</p>
-                )}
-              </Link>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Current Stage Warnings ── */}
+      {currentStage && currentStage.warnings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <h3 className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            주의사항
+          </h3>
+          <ul className="space-y-1">
+            {currentStage.warnings.map((w, i) => (
+              <li key={i} className="text-xs text-amber-700">
+                &bull; {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Quick Actions ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href={`/patient/${patient.id}/chat`}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-teal-200 transition-colors"
+        >
+          <MessageCircle className="w-6 h-6 text-teal-500 mb-2" />
+          <p className="text-sm font-semibold text-gray-900">AI 상담</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            궁금한 점을 물어보세요
+          </p>
+        </Link>
+        <Link
+          href={`/patient/${patient.id}/education`}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-navy-200 transition-colors"
+        >
+          <BookOpen className="w-6 h-6 text-navy-400 mb-2" />
+          <p className="text-sm font-semibold text-gray-900">교육 자료</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            단계별 안내를 확인하세요
+          </p>
+        </Link>
       </div>
     </div>
   );

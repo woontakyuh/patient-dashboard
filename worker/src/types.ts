@@ -3,6 +3,27 @@ export interface Env {
   NOTION_DATABASE_ID: string;
   PAGES_DOMAIN: string;
   PATIENT_CACHE: KVNamespace;
+  AI: {
+    run(model: string, inputs: Record<string, unknown>): Promise<unknown>;
+  };
+}
+
+export interface ChatRequest {
+  messages: { role: "user" | "assistant"; content: string }[];
+  patientContext: {
+    name: string;
+    surgeryType: string;
+    surgeryDate: string;
+    currentStage: string;
+    diagnosis: string;
+    surgerySchedule?: string;
+    surgeryAbbreviation?: string;
+  };
+}
+
+export interface ChatResponse {
+  content: string;
+  triage: "green" | "yellow" | "red";
 }
 
 export interface Patient {
@@ -22,6 +43,7 @@ export interface Patient {
     abbreviation: string;
     date: string;
     categories: string[];
+    schedule?: string;
   };
   admission: {
     date: string;

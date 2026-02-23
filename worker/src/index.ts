@@ -1,5 +1,6 @@
-import type { Env, PromSubmission } from "./types";
+import type { Env, PromSubmission, ChatRequest } from "./types";
 import { fetchPatientByPtNo, getNotionPageId, writePromToNotion } from "./notion";
+import { handleChat } from "./chat";
 
 const CACHE_TTL = 300; // 5 minutes
 const CORS_HEADERS = {
@@ -114,6 +115,35 @@ export default {
       await env.PATIENT_CACHE.delete(cacheKey);
 
       return jsonResponse({ ok: true });
+    }
+
+    // ── Chat (Workers AI) ──
+
+    if (url.pathname === "/api/chat" && request.method === "POST") {
+      let body: ChatRequest;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonResponse({ error: "Invalid JSON" }, 400);
+      }
+
+      if (!body.messages || body.messages.length === 0) {
+        return jsonResponse({ error: "No messages provided" }, 400);
+      }
+
+      try {
+        const result = await handleChat(body, env);
+        return jsonResponse(result);
+      } catch (err) {
+        console.error("Chat error:", err);
+        return jsonResponse(
+          {
+            content: "죄송합니다, 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+            triage: "green",
+          },
+          200 // Return 200 with fallback message so client can display it
+        );
+      }
     }
 
     // ── Static Asset Proxy ──

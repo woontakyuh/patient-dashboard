@@ -83,6 +83,7 @@ function transformNotionToPatient(page: any): PatientApiResponse {
   const admDate = getDate(page, "Adm Date") || (opDate ? addDays(opDate, -1) : "");
   const firstOpd = getDate(page, "1st OPD");
   const categories = getMultiSelect(page, "Op Category");
+  const schedule = getText(page, "Sch") || getSelect(page, "Sch") || undefined;
   const hospital = getMultiSelect(page, "Hospital").join(", ") || "다보스 병원";
   const surgeon = getMultiSelect(page, "Surgeon").join(", ");
   // Determine surgery type for template
@@ -127,6 +128,7 @@ function transformNotionToPatient(page: any): PatientApiResponse {
       abbreviation,
       date: opDate,
       categories,
+      schedule,
     },
     admission: {
       date: admDate,

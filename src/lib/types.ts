@@ -47,6 +47,7 @@ export interface Patient {
     abbreviation: string;
     date: string;
     categories: string[];
+    schedule?: string; // e.g. "9A", "AMOC1", "PMOC"
   };
   admission: {
     date: string;
@@ -123,6 +124,56 @@ export interface JoaItem {
   id: string;
   title: string;
   options: { label: string; score: number }[];
+}
+
+// ── Journey Stage ─────────────────────────────────────────────
+
+export type JourneyStageId =
+  | "decision"
+  | "surgery"
+  | "immediate"
+  | "early_recovery"
+  | "mid_recovery"
+  | "full_recovery";
+
+export interface JourneyStage {
+  id: JourneyStageId;
+  title: string;
+  titleKo: string;
+  subtitle: string;
+  description: string;
+  icon: string; // lucide icon name
+  dayRange: { from: number; to: number }; // relative to surgery date
+  tasks: string[];
+  clinicalStageIds: string[]; // maps to ClinicalStage.id
+}
+
+// ── Chat Message ──────────────────────────────────────────────
+
+export type TriageLevel = "green" | "yellow" | "red";
+
+export interface ChatMessage {
+  id: string;
+  role: "patient" | "assistant";
+  content: string;
+  triage?: TriageLevel;
+  timestamp: string;
+}
+
+// ── Education Content ─────────────────────────────────────────
+
+export type EducationContentType = "video" | "article" | "checklist";
+
+export interface EducationItem {
+  id: string;
+  title: string;
+  type: EducationContentType;
+  duration: string; // "3분", "5분 읽기"
+  stage: JourneyStageId;
+  priority: "essential" | "recommended" | "optional";
+  redFlag?: boolean;
+  summary: string;
+  url?: string; // placeholder for future content links
 }
 
 // ── Inpatient Schedule ──────────────────────────────────────────

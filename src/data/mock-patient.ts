@@ -175,6 +175,7 @@ const mockPatientsData: Patient[] = [
       abbreviation: lpTemplate.abbreviation,
       date: "2026-02-24",
       categories: ["LP"],
+      schedule: "9A",
     },
     admission: {
       date: "2026-02-23",
@@ -206,6 +207,7 @@ const mockPatientsData: Patient[] = [
       abbreviation: "PPF",
       date: "2026-02-24",
       categories: ["PPF", "UBE", "VP", "MBB"],
+      schedule: "AMOC1",
     },
     admission: {
       date: "2026-02-20",
