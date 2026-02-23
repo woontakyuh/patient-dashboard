@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/patient/P001");
+    router.replace("/patient/P004");
   }, [router]);
   return null;
 }
