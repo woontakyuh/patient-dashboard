@@ -21,7 +21,7 @@ function extractPtNo(host: string): string | null {
   // "takmd.com" → null (bare domain)
   // "localhost:8787" → use ?ptno= query param for dev
   const parts = host.replace(/:\d+$/, "").split(".");
-  if (parts.length >= 3) return parts[0];
+  if (parts.length >= 3 && /^\d+$/.test(parts[0] ?? "")) return parts[0];
   return null;
 }
 
@@ -37,6 +37,10 @@ export default {
     // Extract patient number from subdomain (or ?ptno= for local dev)
     const host = request.headers.get("Host") || "";
     const ptNo = extractPtNo(host) || url.searchParams.get("ptno");
+
+    if (!ptNo) {
+      return fetch(request);
+    }
 
     // ── API Routes ──
 
