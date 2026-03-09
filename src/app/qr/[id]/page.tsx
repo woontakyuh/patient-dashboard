@@ -9,7 +9,7 @@ function getBaseUrl(): string {
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:3001";
   }
-  return "https://takmd.com";
+  return "https://patient.takmd.com";
 }
 
 export function generateStaticParams() {
@@ -26,7 +26,7 @@ export default function PatientQrPage({
     notFound();
   }
 
-  const patientUrl = `${getBaseUrl()}/patient/${patient.id}`;
+  const patientUrl = `${getBaseUrl()}/${patient.id}`;
   const qrUrl = `https://quickchart.io/qr?size=360&margin=2&text=${encodeURIComponent(
     patientUrl,
   )}`;
@@ -54,7 +54,7 @@ export default function PatientQrPage({
 
         <div className="mt-4 flex gap-2">
           <Link
-            href={`/patient/${patient.id}`}
+            href={`/${patient.id}`}
             className="flex-1 rounded-lg bg-teal-500 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-teal-600"
           >
             환자 화면 미리보기
