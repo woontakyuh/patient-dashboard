@@ -1,6 +1,12 @@
 import type { FaqItem, ScheduleRow } from "@/lib/types";
 
-export type SurgeryType = "ube" | "vp" | "acdf" | "lp" | "fusion";
+export type SurgeryType =
+  | "ube_lumbar"
+  | "ube_cervical"
+  | "vp"
+  | "acdf"
+  | "lp"
+  | "fusion";
 
 export type SpineRegion = "lumbar" | "cervical" | "thoracolumbar";
 

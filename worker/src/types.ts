@@ -30,6 +30,7 @@ export interface Patient {
   id: string;
   subdomain: string;
   name: string;
+  birthDate: string;
   age: number;
   sex: "M" | "F";
   diagnosis: {
@@ -97,12 +98,12 @@ export interface PatientApiResponse {
 
 export interface PromSubmission {
   vas_back: number;
-  vas_leg: number;
+  vas_leg?: number;
   odi_scores?: number[];
-  odi_total_percent: number;
+  odi_total_percent?: number;
   ndi_scores?: number[];
   ndi_total_percent?: number;
-  joa_score: number;
+  joa_score?: number;
   eq5d_dimensions: number[];
   eq5d_code: string;
   eq_vas: number;

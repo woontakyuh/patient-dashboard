@@ -1,7 +1,7 @@
 import type { SurgeryTemplate } from "./types";
 
 export const ubeTemplate: SurgeryTemplate = {
-  type: "ube",
+  type: "ube_lumbar",
   name: "UBE discectomy",
   nameKo: "양방향 내시경 디스크 제거술",
   abbreviation: "UBE",

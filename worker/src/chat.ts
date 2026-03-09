@@ -129,10 +129,39 @@ function parseTriageFromResponse(text: string): { content: string; triage: "gree
   return { content, triage };
 }
 
+const RED_FLAG_PATTERNS: RegExp[] = [
+  /열\s*3[89](\.\d+)?/,
+  /고열/,
+  /다리.*힘.*빠/,
+  /마비/,
+  /대소변.*(안|못|장애)/,
+  /소변.*(안|못)\s*나/,
+  /배변.*(안|못)\s*되/,
+  /호흡곤란|숨\s*차/,
+  /흉통|가슴\s*통증/,
+  /의식\s*저하|실신/,
+  /한쪽.*종아리.*붓/,
+];
+
+function detectRuleBasedRedFlag(messages: ChatRequest["messages"]): boolean {
+  const latestUser = [...messages].reverse().find((m) => m.role === "user");
+  if (!latestUser) return false;
+  const text = latestUser.content.replace(/\s+/g, " ").trim();
+  return RED_FLAG_PATTERNS.some((pattern) => pattern.test(text));
+}
+
 export async function handleChat(
   body: ChatRequest,
   env: Env
 ): Promise<ChatResponse> {
+  if (detectRuleBasedRedFlag(body.messages)) {
+    return {
+      content:
+        "말씀하신 증상은 응급 평가가 필요할 수 있습니다. 즉시 응급실에 내원하시거나 119에 연락하세요. 가능하면 수술받은 병원에도 바로 연락해 주세요.",
+      triage: "red",
+    };
+  }
+
   const systemPrompt = buildSystemPrompt(body.patientContext);
 
   // Build messages for Workers AI

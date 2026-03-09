@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getPatientById } from "@/data/mock-patient";
+import Link from "next/link";
 import { JOURNEY_STAGES, computeJourneyStage, getJourneyStageStatus } from "@/data/journey-stages";
 import { getEducationByStage } from "@/data/education-content";
 import type { JourneyStageId } from "@/lib/types";
+import { usePatientData } from "@/lib/usePatientData";
 import {
   BookOpen,
   Video,
@@ -16,6 +17,8 @@ import {
   ChevronUp,
   AlertTriangle,
   Clock,
+  ExternalLink,
+  MessageCircle,
 } from "lucide-react";
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -37,7 +40,7 @@ const PRIORITY_LABELS = {
 };
 
 export default function EducationClient({ id }: { id: string }) {
-  const patient = getPatientById(id);
+  const { patient } = usePatientData(id);
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
   const [expandedStage, setExpandedStage] = useState<JourneyStageId | null>(null);
 
@@ -74,7 +77,7 @@ export default function EducationClient({ id }: { id: string }) {
 
   // Count completed per stage
   function getStageProgress(stageId: JourneyStageId) {
-    const items = getEducationByStage(stageId);
+    const items = getEducationByStage(stageId, patient?.surgery.type);
     const done = items.filter((item) => completedItems[item.id]).length;
     return { done, total: items.length };
   }
@@ -95,7 +98,7 @@ export default function EducationClient({ id }: { id: string }) {
         const status = getJourneyStageStatus(stage.id, currentJourneyId);
         const isLocked = status === "upcoming";
         const isExpanded = expandedStage === stage.id;
-        const items = getEducationByStage(stage.id);
+        const items = getEducationByStage(stage.id, patient.surgery.type);
         const { done, total } = getStageProgress(stage.id);
 
         return (
@@ -221,6 +224,32 @@ export default function EducationClient({ id }: { id: string }) {
                             >
                               {PRIORITY_LABELS[item.priority]}
                             </span>
+                            {item.surgeryTypes?.includes(patient.surgery.type) && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-50 text-indigo-700">
+                                수술 맞춤
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-2">
+                            {item.url && (
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold text-navy-500 bg-navy-50 hover:bg-navy-100 border border-navy-100 rounded-md px-2 py-1 transition-colors"
+                              >
+                                자료 열기
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <Link
+                              href={`/patient/${patient.id}/chat?q=${encodeURIComponent(`${item.title} 자료를 읽었는데, ${patient.surgery.nameKo} 환자 기준으로 핵심만 다시 설명해줘.`)}`}
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-100 rounded-md px-2 py-1 transition-colors"
+                            >
+                              질문하기
+                              <MessageCircle className="w-3 h-3" />
+                            </Link>
                           </div>
                         </div>
                       </div>

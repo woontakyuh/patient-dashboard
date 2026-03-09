@@ -56,7 +56,8 @@ export function buildFollowUpsFromTemplate(
 
 // ── Mock Patients ────────────────────────────────────────────────
 
-const ubeTemplate = getSurgeryTemplate("ube");
+const ubeLumbarTemplate = getSurgeryTemplate("ube_lumbar");
+const ubeCervicalTemplate = getSurgeryTemplate("ube_cervical");
 const vpTemplate = getSurgeryTemplate("vp");
 const acdfTemplate = getSurgeryTemplate("acdf");
 const lpTemplate = getSurgeryTemplate("lp");
@@ -68,6 +69,7 @@ const mockPatientsData: Patient[] = [
     id: "P001",
     subdomain: "09782901",
     name: "김태수",
+    birthDate: "1996-04-19",
     age: 29,
     sex: "M",
     diagnosis: {
@@ -76,12 +78,12 @@ const mockPatientsData: Patient[] = [
       nameKo: "요추 4-5번 추간판 탈출증",
     },
     surgery: {
-      type: "ube",
-      name: ubeTemplate.name,
-      nameKo: ubeTemplate.nameKo,
-      abbreviation: ubeTemplate.abbreviation,
+      type: "ube_lumbar",
+      name: ubeLumbarTemplate.name,
+      nameKo: ubeLumbarTemplate.nameKo,
+      abbreviation: ubeLumbarTemplate.abbreviation,
       date: "2026-02-10",
-      categories: ["UBE"],
+      categories: ["UBE", "ULBD", "discectomy"],
     },
     admission: {
       date: "2026-02-09",
@@ -89,9 +91,9 @@ const mockPatientsData: Patient[] = [
     },
     hospital: "다보스 병원",
     surgeon: "유원탁",
-    promInstruments: ubeTemplate.promInstruments,
-    followUps: buildFollowUpsFromTemplate("2026-02-10", "ube"),
-    stages: buildStagesFromTemplate("2026-02-10", "ube"),
+    promInstruments: ubeLumbarTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-02-10", "ube_lumbar"),
+    stages: buildStagesFromTemplate("2026-02-10", "ube_lumbar"),
   },
 
   // P002 — VP (골다공증 압박골절)
@@ -99,6 +101,7 @@ const mockPatientsData: Patient[] = [
     id: "P002",
     subdomain: "10234501",
     name: "박순자",
+    birthDate: "1951-10-03",
     age: 74,
     sex: "F",
     diagnosis: {
@@ -112,7 +115,7 @@ const mockPatientsData: Patient[] = [
       nameKo: vpTemplate.nameKo,
       abbreviation: vpTemplate.abbreviation,
       date: "2026-02-15",
-      categories: ["VP"],
+      categories: ["VP", "FIMS V"],
     },
     admission: {
       date: "2026-02-14",
@@ -130,6 +133,7 @@ const mockPatientsData: Patient[] = [
     id: "P003",
     subdomain: "10345602",
     name: "이정훈",
+    birthDate: "1974-07-11",
     age: 52,
     sex: "M",
     diagnosis: {
@@ -161,6 +165,7 @@ const mockPatientsData: Patient[] = [
     id: "P004",
     subdomain: "09792747",
     name: "이영동",
+    birthDate: "1943-02-26",
     age: 83,
     sex: "M",
     diagnosis: {
@@ -193,6 +198,7 @@ const mockPatientsData: Patient[] = [
     id: "P005",
     subdomain: "09930048",
     name: "김복남",
+    birthDate: "1961-09-14",
     age: 65,
     sex: "M",
     diagnosis: {
@@ -218,6 +224,39 @@ const mockPatientsData: Patient[] = [
     promInstruments: fusionTemplate.promInstruments,
     followUps: buildFollowUpsFromTemplate("2026-02-24", "fusion"),
     stages: buildStagesFromTemplate("2026-02-24", "fusion"),
+  },
+
+  // P006 — UBE Cervical (PCF)
+  {
+    id: "P006",
+    subdomain: "10577892",
+    name: "최영수",
+    birthDate: "1968-12-08",
+    age: 57,
+    sex: "M",
+    diagnosis: {
+      code: "C6-7",
+      name: "Cervical foraminal stenosis",
+      nameKo: "경추 6-7번 추간공 협착증",
+    },
+    surgery: {
+      type: "ube_cervical",
+      name: ubeCervicalTemplate.name,
+      nameKo: ubeCervicalTemplate.nameKo,
+      abbreviation: ubeCervicalTemplate.abbreviation,
+      date: "2026-02-28",
+      categories: ["UBE", "PCF"],
+      schedule: "PMOC",
+    },
+    admission: {
+      date: "2026-02-27",
+      expectedDischarge: "2026-03-02",
+    },
+    hospital: "다보스 병원",
+    surgeon: "유원탁",
+    promInstruments: ubeCervicalTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-02-28", "ube_cervical"),
+    stages: buildStagesFromTemplate("2026-02-28", "ube_cervical"),
   },
 ];
 

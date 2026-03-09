@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getPatientById } from "@/data/mock-patient";
+import { useSearchParams } from "next/navigation";
 import { computeJourneyStage } from "@/data/journey-stages";
 import { getQuickQuestions } from "@/data/chatbot-faq";
 import type { ChatMessage, TriageLevel } from "@/lib/types";
+import { logAuditEvent } from "@/lib/audit-log";
+import { usePatientData } from "@/lib/usePatientData";
 import {
   Send,
   MessageCircle,
@@ -57,7 +59,8 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function ChatClient({ id }: { id: string }) {
-  const patient = getPatientById(id);
+  const searchParams = useSearchParams();
+  const { patient } = usePatientData(id);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -98,6 +101,14 @@ export default function ChatClient({ id }: { id: string }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     }
   }, [messages, STORAGE_KEY]);
+
+  // Prefill question from education page
+  useEffect(() => {
+    const preset = searchParams.get("q");
+    if (preset) {
+      setInput(preset);
+    }
+  }, [searchParams]);
 
   if (!patient) {
     return (
@@ -172,6 +183,15 @@ export default function ChatClient({ id }: { id: string }) {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
+
+      if (result.triage === "yellow" || result.triage === "red") {
+        logAuditEvent({
+          type: "triage_alert",
+          patientId: id,
+          detail: `Chat triage escalated to ${result.triage}`,
+          timestamp: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       console.error("Chat API error:", err);
       const errorMsg: ChatMessage = {

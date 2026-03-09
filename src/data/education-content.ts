@@ -1,4 +1,4 @@
-import type { EducationItem, JourneyStageId } from "@/lib/types";
+import type { EducationItem, JourneyStageId, SurgeryType } from "@/lib/types";
 
 export const EDUCATION_CONTENT: EducationItem[] = [
   // ── 수술 결정 (decision) ──
@@ -11,6 +11,8 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "UBE(양방향 내시경 수술)의 원리와 기존 수술과의 차이점, 장점을 알기 쉽게 설명합니다.",
+    url: "https://takmd.com/education/endoscopic-spine-intro",
+    surgeryTypes: ["ube_lumbar", "ube_cervical"],
   },
   {
     id: "edu-d2",
@@ -21,6 +23,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "혈액검사, 심전도, 흉부 X-ray 등 수술 전 필요한 검사 목록과 주의사항입니다.",
+    url: "https://takmd.com/education/preop-checklist",
   },
   {
     id: "edu-d3",
@@ -31,6 +34,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "recommended",
     summary:
       "ERAS(수술 후 빠른 회복) 프로토콜의 핵심: 금식 최소화, 조기 보행, 통증 관리 방법을 안내합니다.",
+    url: "https://takmd.com/education/eras-protocol",
   },
   {
     id: "edu-d4",
@@ -53,6 +57,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "수술 당일 금식, 약물 복용, 수술실 이동 등 순서대로 안내합니다.",
+    url: "https://takmd.com/education/opday-guide",
   },
   {
     id: "edu-s2",
@@ -96,6 +101,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     redFlag: true,
     summary:
       "발열, 심한 두통, 다리 마비 등 즉시 의료진에게 알려야 하는 위험 신호를 정리했습니다.",
+    url: "https://takmd.com/education/red-flag",
   },
   {
     id: "edu-i4",
@@ -118,6 +124,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "샤워, 운전, 출근, 가사 등 일상 활동별 복귀 시기와 주의사항입니다.",
+    url: "https://takmd.com/education/daily-life-return",
   },
   {
     id: "edu-e2",
@@ -150,6 +157,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "수술 후 1~3개월 시기에 적합한 코어 강화, 스트레칭 운동을 단계별로 안내합니다.",
+    url: "https://takmd.com/education/rehab-program",
   },
   {
     id: "edu-m2",
@@ -183,6 +191,7 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "essential",
     summary:
       "수술 후 1년 이후 생활 습관, 운동, 정기 검진 계획을 안내합니다.",
+    url: "https://takmd.com/education/long-term-care",
   },
   {
     id: "edu-f2",
@@ -193,9 +202,85 @@ export const EDUCATION_CONTENT: EducationItem[] = [
     priority: "recommended",
     summary:
       "수영, 골프, 등산 등 스포츠별 복귀 시기와 주의사항을 정리했습니다.",
+    url: "https://takmd.com/education/sports-return",
+  },
+
+  // ── Surgery-Specific Bundles ──
+  {
+    id: "edu-spec-ube-lumbar",
+    title: "UBE 요추 감압술 환자용 운동 가이드",
+    type: "video",
+    duration: "7분",
+    stage: "early_recovery",
+    priority: "essential",
+    summary: "ULBD/discectomy/foraminal decomp 수술 환자를 위한 초기 보행과 허리 사용법 영상입니다.",
+    url: "https://takmd.com/education/ube-lumbar-walking",
+    surgeryTypes: ["ube_lumbar"],
+  },
+  {
+    id: "edu-spec-fusion",
+    title: "요추 유합술 보조기(TLSO) 착용법",
+    type: "video",
+    duration: "6분",
+    stage: "immediate",
+    priority: "essential",
+    summary: "TLIF/OLIF/DLIF/PLIF/PPF/PSF 환자를 위한 보조기 착용/해제/생활 동작 안내입니다.",
+    url: "https://takmd.com/education/fusion-brace",
+    surgeryTypes: ["fusion"],
+  },
+  {
+    id: "edu-spec-vp",
+    title: "VP/FIMS V 후 낙상 예방 체크리스트",
+    type: "checklist",
+    duration: "3분",
+    stage: "early_recovery",
+    priority: "essential",
+    summary: "시술 후 재골절 예방을 위한 집안 환경 점검 항목과 보호자 가이드를 제공합니다.",
+    url: "https://takmd.com/education/vp-fall-prevention",
+    surgeryTypes: ["vp"],
+  },
+  {
+    id: "edu-spec-ube-cervical",
+    title: "UBE 경추 수술 후 목/팔 증상 체크",
+    type: "article",
+    duration: "4분 읽기",
+    stage: "early_recovery",
+    priority: "essential",
+    summary: "PCF/C-ULBD 환자에서 흔한 회복 증상과 즉시 보고가 필요한 신경학적 변화를 정리했습니다.",
+    url: "https://takmd.com/education/ube-cervical-check",
+    surgeryTypes: ["ube_cervical"],
+  },
+  {
+    id: "edu-spec-lp",
+    title: "Cervical LP 보행 균형 훈련",
+    type: "video",
+    duration: "5분",
+    stage: "mid_recovery",
+    priority: "recommended",
+    summary: "Laminoplasty 후 보행 안정성 회복을 위한 단계별 균형 훈련 가이드입니다.",
+    url: "https://takmd.com/education/lp-balance",
+    surgeryTypes: ["lp"],
+  },
+  {
+    id: "edu-spec-acdf",
+    title: "ACDF 연하장애/쉰목소리 관리",
+    type: "article",
+    duration: "4분 읽기",
+    stage: "immediate",
+    priority: "essential",
+    summary: "ACDF 직후 흔한 연하 증상과 회복 경과, 외래 전 확인할 체크포인트를 안내합니다.",
+    url: "https://takmd.com/education/acdf-swallowing",
+    surgeryTypes: ["acdf"],
   },
 ];
 
-export function getEducationByStage(stage: JourneyStageId): EducationItem[] {
-  return EDUCATION_CONTENT.filter((item) => item.stage === stage);
+export function getEducationByStage(
+  stage: JourneyStageId,
+  surgeryType?: SurgeryType
+): EducationItem[] {
+  return EDUCATION_CONTENT.filter((item) => {
+    if (item.stage !== stage) return false;
+    if (!surgeryType || !item.surgeryTypes || item.surgeryTypes.length === 0) return true;
+    return item.surgeryTypes.includes(surgeryType);
+  });
 }

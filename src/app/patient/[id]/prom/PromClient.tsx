@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { odiSections, ndiSections, eq5dDimensions, joaItems } from "@/data/prom-instruments";
-import { getPatientById } from "@/data/mock-patient";
 import { getSurgeryTemplate } from "@/data/surgery-templates";
 import type { PromResult, PromInstrumentId } from "@/lib/types";
+import { logAuditEvent } from "@/lib/audit-log";
+import { usePatientData } from "@/lib/usePatientData";
 
 const STORAGE_KEY = "prom-history-v2";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 const allTabs: { id: PromInstrumentId; label: string }[] = [
   { id: "vas", label: "VAS" },
@@ -39,8 +41,15 @@ function saveHistory(entries: PromResult[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
+function getPromApiUrl(ptNo: string): string {
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  const hasNumericSubdomain = /^\d+\./.test(host);
+  const query = hasNumericSubdomain ? "" : `?ptno=${encodeURIComponent(ptNo)}`;
+  return `${API_BASE}/api/prom${query}`;
+}
+
 export default function PromClient({ id }: { id: string }) {
-  const patient = getPatientById(id);
+  const { patient } = usePatientData(id);
   const template = patient ? getSurgeryTemplate(patient.surgery.type) : null;
 
   // Filter tabs based on patient's promInstruments
@@ -49,10 +58,14 @@ export default function PromClient({ id }: { id: string }) {
     return allTabs.filter((t) => patient.promInstruments.includes(t.id));
   }, [patient]);
 
-  const vasScales = template?.vasConfig.scales ?? [
-    { id: "vas_back", label: "허리 통증" },
-    { id: "vas_leg", label: "다리 통증/저림" },
-  ];
+  const vasScales = useMemo(
+    () =>
+      template?.vasConfig.scales ?? [
+        { id: "vas_back", label: "허리 통증" },
+        { id: "vas_leg", label: "다리 통증/저림" },
+      ],
+    [template]
+  );
 
   const [activeTab, setActiveTab] = useState<PromInstrumentId>("vas");
   const [vasValues, setVasValues] = useState<Record<string, number>>({});
@@ -62,6 +75,8 @@ export default function PromClient({ id }: { id: string }) {
   const [eq5dScores, setEq5dScores] = useState<Record<string, number>>({});
   const [eqVas, setEqVas] = useState(50);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSyncError, setSubmitSyncError] = useState<string | null>(null);
   const [history, setHistory] = useState<PromResult[]>([]);
 
   useEffect(() => {
@@ -73,7 +88,7 @@ export default function PromClient({ id }: { id: string }) {
     const init: Record<string, number> = {};
     vasScales.forEach((s) => { init[s.id] = 0; });
     setVasValues(init);
-  }, []);
+  }, [vasScales]);
 
   const hasOdi = patient?.promInstruments.includes("odi") ?? false;
   const hasNdi = patient?.promInstruments.includes("ndi") ?? false;
@@ -104,7 +119,11 @@ export default function PromClient({ id }: { id: string }) {
   const prevTab = currentTabIndex > 0 ? tabs[currentTabIndex - 1] : null;
   const nextTab = currentTabIndex < tabs.length - 1 ? tabs[currentTabIndex + 1] : null;
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (!patient) return;
+    if (isSubmitting) return;
+    setSubmitSyncError(null);
+
     const entry: PromResult = {
       patientId: id,
       date: new Date().toISOString().slice(0, 10),
@@ -130,6 +149,48 @@ export default function PromClient({ id }: { id: string }) {
     const updated = [...history, entry];
     saveHistory(updated);
     setHistory(updated);
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(getPromApiUrl(patient.subdomain), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vas_back: entry.vas_back,
+          vas_leg: entry.vas_leg,
+          odi_scores: entry.odi_scores,
+          odi_total_percent: entry.odi_total_percent,
+          ndi_scores: entry.ndi_scores,
+          ndi_total_percent: entry.ndi_total_percent,
+          joa_score: entry.joa_score,
+          eq5d_dimensions: entry.eq5d_dimensions,
+          eq5d_code: entry.eq5d_code,
+          eq_vas: entry.eq_vas,
+          opDate: patient.surgery.date,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`PROM API failed (${res.status})`);
+      }
+      logAuditEvent({
+        type: "prom_sync_success",
+        patientId: id,
+        detail: `PROM synced (status ${res.status})`,
+        timestamp: new Date().toISOString(),
+      });
+    } catch {
+      setSubmitSyncError("서버 동기화에 실패했습니다. 로컬에는 저장되었으며 다음 접속 시 재전송 가능합니다.");
+      logAuditEvent({
+        type: "prom_sync_failure",
+        patientId: id,
+        detail: "PROM sync failed; local backup only",
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+
     setSubmitted(true);
   }
 
@@ -143,6 +204,7 @@ export default function PromClient({ id }: { id: string }) {
     setEq5dScores({});
     setEqVas(50);
     setSubmitted(false);
+    setSubmitSyncError(null);
     setActiveTab("vas");
   }
 
@@ -160,7 +222,16 @@ export default function PromClient({ id }: { id: string }) {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
           <div className="text-4xl mb-3">&#10004;&#65039;</div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">설문이 제출되었습니다</h1>
-          <p className="text-sm text-gray-500 mb-4">감사합니다. 결과가 저장되었습니다.</p>
+          <p className="text-sm text-gray-500 mb-2">감사합니다. 결과가 저장되었습니다.</p>
+          {submitSyncError ? (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mb-3">
+              {submitSyncError}
+            </p>
+          ) : (
+            <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1.5 mb-3">
+              서버 기록까지 정상 동기화되었습니다.
+            </p>
+          )}
 
           <div className="bg-gray-50 rounded-xl p-4 text-left text-sm space-y-2">
             {vasScales.map((s) => (
@@ -615,10 +686,12 @@ export default function PromClient({ id }: { id: string }) {
       {/* Submit Button */}
       <button
         onClick={handleSubmit}
-        disabled={!allComplete}
+        disabled={!allComplete || isSubmitting}
         className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-base hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
-        {!allComplete
+        {isSubmitting
+          ? "제출 중..."
+          : !allComplete
           ? "미완료 항목이 있습니다"
           : "설문 제출"}
       </button>

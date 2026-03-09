@@ -3,12 +3,12 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getPatientById } from "@/data/mock-patient";
 import { formatDate } from "@/lib/utils";
+import { usePatientData } from "@/lib/usePatientData";
 
 export default function TimelineClient({ id }: { id: string }) {
   const router = useRouter();
-  const patient = getPatientById(id);
+  const { patient } = usePatientData(id);
   const currentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

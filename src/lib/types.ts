@@ -33,6 +33,7 @@ export interface Patient {
   id: string;
   subdomain: string;
   name: string;
+  birthDate: string; // YYYY-MM-DD
   age: number;
   sex: "M" | "F";
   diagnosis: {
@@ -79,6 +80,12 @@ export interface PatientApiResponse {
 export interface FollowUp {
   label: string;
   date: string;
+}
+
+export interface MicroPromCheckpoint {
+  day: number;
+  label: string;
+  recommendedInstruments: PromInstrumentId[];
 }
 
 // ── PROM Result ─────────────────────────────────────────────────
@@ -173,7 +180,8 @@ export interface EducationItem {
   priority: "essential" | "recommended" | "optional";
   redFlag?: boolean;
   summary: string;
-  url?: string; // placeholder for future content links
+  url?: string;
+  surgeryTypes?: SurgeryType[]; // optional surgery-specific targeting
 }
 
 // ── Inpatient Schedule ──────────────────────────────────────────

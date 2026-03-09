@@ -2,11 +2,22 @@
 
 import { useRef, useState, useId } from "react";
 
+export type AvatarHairStyle = "short" | "medium" | "long" | "bald";
+export type AvatarAgeGroup = "young" | "middle" | "senior";
+
+export interface AvatarProfile {
+  hairStyle: AvatarHairStyle;
+  glasses: boolean;
+  sex: "M" | "F";
+  ageGroup: AvatarAgeGroup;
+}
+
 interface PatientCharacterProps {
   photoUrl?: string | null;
   size?: number;
   mood?: "happy" | "neutral" | "recovering" | "hospital";
   showBrace?: boolean;
+  profile?: AvatarProfile | null;
 }
 
 export default function PatientCharacter({
@@ -14,6 +25,7 @@ export default function PatientCharacter({
   size = 120,
   mood = "neutral",
   showBrace = false,
+  profile,
 }: PatientCharacterProps) {
   const clipId = useId();
 
@@ -25,6 +37,25 @@ export default function PatientCharacter({
   };
 
   const eyeY = mood === "hospital" ? 58 : 56;
+  const hairColor =
+    profile?.ageGroup === "senior"
+      ? "#9ca3af"
+      : profile?.sex === "F"
+        ? "#4b5563"
+        : "#374151";
+
+  function hairPath(style: AvatarHairStyle | undefined): string {
+    if (style === "bald") return "";
+    if (style === "long") {
+      return "M 20 42 Q 20 10 60 10 Q 100 10 100 42 L 94 92 Q 60 104 26 92 L 20 42 Z";
+    }
+    if (style === "medium") {
+      return "M 22 40 Q 22 12 60 10 Q 98 12 98 40 Q 96 64 88 74 Q 60 84 32 74 Q 24 64 22 40 Z";
+    }
+    return "M 22 40 Q 22 12 60 10 Q 98 12 98 40 Q 95 28 60 24 Q 25 28 22 40Z";
+  }
+
+  const currentHairPath = hairPath(profile?.hairStyle);
 
   return (
     <svg
@@ -71,10 +102,18 @@ export default function PatientCharacter({
       )}
 
       {/* Hair (drawn on top of photo to frame it) */}
-      <path
-        d="M 22 40 Q 22 12 60 10 Q 98 12 98 40 Q 95 28 60 24 Q 25 28 22 40Z"
-        fill="#374151"
-      />
+      {currentHairPath && (
+        <path d={currentHairPath} fill={hairColor} />
+      )}
+
+      {/* Glasses */}
+      {profile?.glasses && (
+        <g fill="none" stroke="#334155" strokeWidth={2}>
+          <circle cx={46} cy={56} r={8} />
+          <circle cx={74} cy={56} r={8} />
+          <line x1={54} y1={56} x2={66} y2={56} />
+        </g>
+      )}
 
       {/* Face features (shown only without photo) */}
       {!photoUrl && (
@@ -168,7 +207,6 @@ export function SelfieCapture({
 
       setPreview(croppedUrl);
       onCapture(croppedUrl);
-      localStorage.setItem("patient-avatar", croppedUrl);
       setProcessing(false);
     };
     reader.readAsDataURL(file);

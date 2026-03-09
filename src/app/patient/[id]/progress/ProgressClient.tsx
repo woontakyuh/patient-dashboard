@@ -12,9 +12,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { mockPromTrend } from "@/data/prom-instruments";
-import { getPatientById } from "@/data/mock-patient";
 import { getSurgeryTemplate } from "@/data/surgery-templates";
 import type { PromResult } from "@/lib/types";
+import { usePatientData } from "@/lib/usePatientData";
 
 const STORAGE_KEY = "prom-history-v2";
 
@@ -29,7 +29,7 @@ function getHistory(): PromResult[] {
 }
 
 export default function ProgressClient({ id }: { id: string }) {
-  const patient = getPatientById(id);
+  const { patient } = usePatientData(id);
   const template = patient ? getSurgeryTemplate(patient.surgery.type) : null;
 
   const [history, setHistory] = useState<PromResult[]>([]);

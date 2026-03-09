@@ -2,15 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getPatientById } from "@/data/mock-patient";
-import PatientCharacter, { SelfieCapture } from "@/components/avatar/PatientCharacter";
+import PatientCharacter, {
+  AvatarProfile,
+  SelfieCapture,
+} from "@/components/avatar/PatientCharacter";
+import AvatarOnboarding, {
+  buildDefaultAvatarProfile,
+} from "@/components/avatar/AvatarOnboarding";
 import { formatDate, dDay } from "@/lib/utils";
+import { getSurgeryTypeLabel } from "@/lib/surgery-classifier";
+import { usePatientData } from "@/lib/usePatientData";
 import {
   JOURNEY_STAGES,
   computeJourneyStage,
   getJourneyStageStatus,
   getJourneyProgress,
 } from "@/data/journey-stages";
+import { getNextMicroPromCheckpoint } from "@/data/micro-prom-schedule";
 import type { JourneyStageId } from "@/lib/types";
 import {
   ClipboardCheck,
@@ -26,6 +34,7 @@ import {
   BookOpen,
   MessageCircle,
   AlertTriangle,
+  BellRing,
 } from "lucide-react";
 
 // lucide icon lookup
@@ -39,25 +48,40 @@ const STAGE_ICONS: Record<string, React.ElementType> = {
 };
 
 export default function PageClient({ id }: { id: string }) {
-  const patient = getPatientById(id);
+  const { patient } = usePatientData(id);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [avatarProfile, setAvatarProfile] = useState<AvatarProfile | null>(null);
+  const [avatarStateReady, setAvatarStateReady] = useState(false);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [expandedStage, setExpandedStage] = useState<JourneyStageId | null>(null);
 
   const AVATAR_KEY = `patient-avatar-${id}`;
+  const AVATAR_PROFILE_KEY = `patient-avatar-profile-v1-${id}`;
   const CHECKLIST_KEY = `patient-checklist-v2-${id}`;
 
   const currentJourneyId = patient ? computeJourneyStage(patient.surgery.date) : "decision";
 
   useEffect(() => {
+    if (!patient) return;
+
     setPhotoUrl(localStorage.getItem(AVATAR_KEY));
     try {
+      const savedProfile = localStorage.getItem(AVATAR_PROFILE_KEY);
+      if (savedProfile) {
+        setAvatarProfile(JSON.parse(savedProfile));
+      } else {
+        setAvatarProfile(buildDefaultAvatarProfile(patient.age, patient.sex));
+      }
+
       const saved = localStorage.getItem(CHECKLIST_KEY);
       if (saved) setChecklist(JSON.parse(saved));
     } catch {
       /* ignore */
+      setAvatarProfile(buildDefaultAvatarProfile(patient.age, patient.sex));
+    } finally {
+      setAvatarStateReady(true);
     }
-  }, [AVATAR_KEY, CHECKLIST_KEY]);
+  }, [AVATAR_KEY, AVATAR_PROFILE_KEY, CHECKLIST_KEY, patient]);
 
   // Auto-expand current stage on first render
   useEffect(() => {
@@ -72,7 +96,34 @@ export default function PageClient({ id }: { id: string }) {
     );
   }
 
+  if (!avatarStateReady) {
+    return (
+      <div className="animate-fade-in p-6 text-center">
+        <p className="text-gray-500">아바타 정보를 불러오는 중입니다...</p>
+      </div>
+    );
+  }
+
+  if (!photoUrl || !avatarProfile) {
+    return (
+      <AvatarOnboarding
+        patientName={patient.name}
+        age={patient.age}
+        sex={patient.sex}
+        initialPhotoUrl={photoUrl}
+        initialProfile={avatarProfile}
+        onComplete={({ photoUrl: nextPhoto, profile }) => {
+          setPhotoUrl(nextPhoto);
+          setAvatarProfile(profile);
+          localStorage.setItem(AVATAR_KEY, nextPhoto);
+          localStorage.setItem(AVATAR_PROFILE_KEY, JSON.stringify(profile));
+        }}
+      />
+    );
+  }
+
   const progress = getJourneyProgress(patient.surgery.date);
+  const nextMicroProm = getNextMicroPromCheckpoint(patient.surgery.date);
   const nextFollowUp = patient.followUps.find(
     (f) => new Date(f.date) > new Date()
   );
@@ -95,6 +146,7 @@ export default function PageClient({ id }: { id: string }) {
           <PatientCharacter
             photoUrl={photoUrl}
             size={56}
+            profile={avatarProfile}
             mood={
               currentJourneyId === "full_recovery"
                 ? "happy"
@@ -118,6 +170,9 @@ export default function PageClient({ id }: { id: string }) {
               {patient.diagnosis.nameKo}
             </p>
             <p className="text-xs text-gray-400">{patient.surgery.nameKo}</p>
+            <p className="text-[10px] text-teal-700 bg-teal-50 border border-teal-100 rounded-full inline-flex px-2 py-0.5 mt-1">
+              {getSurgeryTypeLabel(patient.surgery.type)}
+            </p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-xs text-gray-400">수술일</span>
               <span className="text-xs font-medium text-gray-700">
@@ -129,7 +184,12 @@ export default function PageClient({ id }: { id: string }) {
             </div>
           </div>
         </div>
-        <SelfieCapture onCapture={(url) => setPhotoUrl(url)} />
+        <SelfieCapture
+          onCapture={(url) => {
+            setPhotoUrl(url);
+            localStorage.setItem(AVATAR_KEY, url);
+          }}
+        />
       </div>
 
       {/* ── Progress Bar ── */}
@@ -161,6 +221,34 @@ export default function PageClient({ id }: { id: string }) {
             </div>
             <p className="text-2xl font-bold">{dDay(nextFollowUp.date)}</p>
           </div>
+        </div>
+      )}
+
+      {/* ── Micro-PROM Next Checkpoint ── */}
+      {nextMicroProm && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <BellRing className="w-4 h-4 text-blue-500" />
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Micro-PROM
+            </p>
+          </div>
+          <p className="text-sm font-semibold text-gray-900">
+            다음 체크포인트: {nextMicroProm.label}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            권장 설문:{" "}
+            {nextMicroProm.recommendedInstruments
+              .filter((id) => patient.promInstruments.includes(id))
+              .map((id) => id.toUpperCase())
+              .join(", ")}
+          </p>
+          <Link
+            href={`/patient/${patient.id}/prom`}
+            className="inline-flex mt-2 text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-md px-2 py-1 transition-colors"
+          >
+            지금 작성하기
+          </Link>
         </div>
       )}
 

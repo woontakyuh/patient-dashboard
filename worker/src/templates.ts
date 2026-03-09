@@ -14,26 +14,68 @@ interface TemplateStage {
 
 // ── Surgery type detection ──
 
-type SurgeryType = "ube" | "acdf" | "lp" | "fusion" | "generic";
+type SurgeryType =
+  | "ube_lumbar"
+  | "ube_cervical"
+  | "acdf"
+  | "lp"
+  | "fusion"
+  | "vp"
+  | "generic";
 
 function detectSurgeryType(categories: string[], opName: string): SurgeryType {
-  const cats = categories.map((c) => c.toLowerCase());
-  const name = opName.toLowerCase();
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
 
-  if (cats.includes("ube") || cats.includes("ulbd") || name.includes("ube")) return "ube";
-  if (cats.includes("acdf") || name.includes("acdf")) return "acdf";
-  if (cats.includes("lp") || name.includes("laminoplasty") || name.includes("laminectomy") || name.includes("lp")) return "lp";
-  if (cats.includes("fusion") || name.includes("plif") || name.includes("tlif") || name.includes("fusion")) return "fusion";
+  const values = [...categories, opName].map(normalize).filter(Boolean);
+  const hasAny = (keywords: string[]) =>
+    values.some((v) => keywords.some((k) => v.includes(k)));
+
+  const hasAcdf = hasAny(["acdf"]);
+  const hasLp = hasAny(["lp", "laminoplasty", "laminectomy"]);
+  const hasFusion = hasAny([
+    "fusion",
+    "tlif",
+    "olif",
+    "dlif",
+    "plif",
+    "ppf",
+    "psf",
+  ]);
+  const hasVp = hasAny(["vp", "fimsv", "vertebroplasty"]);
+  const hasUbe = hasAny(["ube"]);
+  const hasUbeLumbarDecomp = hasAny([
+    "ulbd",
+    "discectomy",
+    "foraminaldecomp",
+    "fos",
+    "lrdecomp",
+  ]);
+  const hasUbeCervicalDecomp = hasAny(["culbd", "pcf"]);
+
+  // Priority agreed for conflict cases:
+  // ACDF > LP > Fusion > VP > UBE cervical > UBE lumbar.
+  if (hasAcdf) return "acdf";
+  if (hasLp) return "lp";
+  if (hasFusion) return "fusion";
+  if (hasVp) return "vp";
+  if (hasUbe && hasUbeCervicalDecomp) return "ube_cervical";
+  if (hasUbe && (hasUbeLumbarDecomp || !hasUbeCervicalDecomp)) return "ube_lumbar";
   return "generic";
 }
 
 export function getSurgeryAbbreviation(categories: string[], opName: string): string {
   const type = detectSurgeryType(categories, opName);
   switch (type) {
-    case "ube": return "UBE";
+    case "ube_lumbar":
+    case "ube_cervical":
+      return "UBE";
     case "acdf": return "ACDF";
     case "lp": return "LP";
     case "fusion": return "Fusion";
+    case "vp": return "VP";
     default: return categories[0] || "OP";
   }
 }
@@ -41,29 +83,43 @@ export function getSurgeryAbbreviation(categories: string[], opName: string): st
 export function getSurgeryNameKo(categories: string[], opName: string): string {
   const type = detectSurgeryType(categories, opName);
   switch (type) {
-    case "ube": return "양방향 내시경 디스크 제거술";
+    case "ube_lumbar": return "양방향 내시경 요추 감압술";
+    case "ube_cervical": return "양방향 내시경 경추 감압술";
     case "acdf": return "전방 경추 추간판 제거 및 유합술";
-    case "lp": return "추궁 성형술 / 절제술";
-    case "fusion": return "척추 유합술";
+    case "lp": return "경추 추궁 성형술";
+    case "fusion": return "요추 유합술";
+    case "vp": return "척추체 성형술 (VP/FIMS V)";
     default: return opName;
   }
 }
 
-export function getPromInstruments(categories: string[]): string[] {
-  const type = detectSurgeryType(categories, "");
-  if (type === "acdf" || type === "lp") {
+export function getPromInstruments(categories: string[], opName = ""): string[] {
+  const type = detectSurgeryType(categories, opName);
+
+  if (type === "acdf" || type === "lp" || type === "ube_cervical") {
     return ["VAS", "NDI", "JOA", "EQ5D", "EQVAS"];
+  }
+  if (type === "vp") {
+    return ["VAS", "ODI", "EQ5D", "EQVAS"];
   }
   return ["VAS", "ODI", "JOA", "EQ5D", "EQVAS"];
 }
 
 // ── Stage templates ──
 
-export function getTemplate(categories: string[]): Omit<TemplateStage, "date" | "status">[] {
-  const type = detectSurgeryType(categories, "");
+export function getTemplate(categories: string[], opName = ""): Omit<TemplateStage, "date" | "status">[] {
+  const type = detectSurgeryType(categories, opName);
   switch (type) {
-    case "ube": return ubeTemplate;
+    case "ube_lumbar":
+      return ubeTemplate;
     case "acdf": return acdfTemplate;
+    // Dedicated templates for these types are not yet defined in this worker file.
+    // Keep generic timeline until specialized templates are added.
+    case "ube_cervical":
+    case "lp":
+    case "fusion":
+    case "vp":
+      return genericTemplate;
     default: return genericTemplate;
   }
 }

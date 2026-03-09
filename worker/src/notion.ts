@@ -74,6 +74,10 @@ function computeStageStatus(stageDate: string | null): "completed" | "current" |
 function transformNotionToPatient(page: any): PatientApiResponse {
   const name = getTitle(page, "Name");
   const ptNo = getText(page, "Pt No");
+  const birthDate =
+    getDate(page, "Birth Date") ||
+    getText(page, "Birth Date") ||
+    getText(page, "DOB");
   const age = parseInt(getText(page, "Age")) || 0;
   const sex = getSelect(page, "Sex").includes("M") ? "M" as const : "F" as const;
   const level = getText(page, "Level");
@@ -89,13 +93,13 @@ function transformNotionToPatient(page: any): PatientApiResponse {
   // Determine surgery type for template
   const abbreviation = getSurgeryAbbreviation(categories, opName);
   const nameKo = getSurgeryNameKo(categories, opName);
-  const promInstruments = getPromInstruments(categories);
+  const promInstruments = getPromInstruments(categories, opName);
 
   // Build follow-ups
   const followUps = opDate ? calculateFollowUps(opDate, firstOpd) : [];
 
   // Build stages from template
-  const template = getTemplate(categories);
+  const template = getTemplate(categories, opName);
   const expectedDischarge = opDate ? addDays(opDate, 1) : "";
   const stages = template.map((t) => {
     const stageDate = t.dateOffset !== null && opDate
@@ -115,6 +119,7 @@ function transformNotionToPatient(page: any): PatientApiResponse {
     id: ptNo,
     subdomain: ptNo,
     name,
+    birthDate,
     age,
     sex,
     diagnosis: {
@@ -256,12 +261,20 @@ export async function writePromToNotion(
   else prefix = "1y";
 
   // Build Notion properties update
-  const vasValue = `${submission.vas_back}/${submission.vas_leg}`;
+  const hasLegVas = typeof submission.vas_leg === "number";
+  const vasValue = hasLegVas
+    ? `${submission.vas_back}/${submission.vas_leg}`
+    : String(submission.vas_back);
   const properties: Record<string, any> = {
     [`${prefix} VAS`]: { rich_text: [{ text: { content: vasValue } }] },
-    [`${prefix} JOA`]: { rich_text: [{ text: { content: String(submission.joa_score) } }] },
     [`${prefix} EQ5D`]: { rich_text: [{ text: { content: String(submission.eq_vas) } }] },
   };
+
+  if (submission.joa_score !== undefined) {
+    properties[`${prefix} JOA`] = {
+      rich_text: [{ text: { content: String(submission.joa_score) } }],
+    };
+  }
 
   // ODI or NDI
   if (submission.odi_total_percent !== undefined) {
