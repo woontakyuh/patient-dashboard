@@ -47,18 +47,18 @@ export function detectSurgeryType(categories: string[], opName = ""): SurgeryTyp
 export function getSurgeryTypeLabel(type: SurgeryType): string {
   switch (type) {
     case "ube_lumbar":
-      return "UBE Lumbar Decompression";
+      return "요추 내시경 감압술";
     case "fusion":
-      return "Lumbar Fusion";
+      return "요추 유합술";
     case "vp":
-      return "VP / FIMS V";
+      return "척추체 성형술";
     case "ube_cervical":
-      return "UBE Cervical Decompression";
+      return "경추 내시경 감압술";
     case "lp":
-      return "Cervical Laminoplasty";
+      return "경추 후궁 성형술";
     case "acdf":
-      return "ACDF";
+      return "경추 전방 유합술";
     default:
-      return "Spine Surgery";
+      return "척추 수술";
   }
 }

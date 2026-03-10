@@ -41,7 +41,7 @@ export const vpTemplate: SurgeryTemplate = {
       dateOffset: 1,
       rows: [
         { time: "오전", activity: "보행 거리 확대", icon: "🚶" },
-        { time: "오전", activity: "X-ray 촬영 (시멘트 위치 확인)", icon: "📸" },
+        { time: "오전", activity: "엑스레이 촬영 (시멘트 위치 확인)", icon: "📸" },
         { time: "오후", activity: "퇴원 교육 및 약 수령", icon: "📦" },
         { time: "오후", activity: "골다공증 치료 약물 교육", icon: "💊" },
       ],
@@ -57,8 +57,8 @@ export const vpTemplate: SurgeryTemplate = {
         "입원 수속 및 혈액검사, 심전도 시행",
         "골밀도 검사(DEXA) 결과 확인",
         "마취과 상담 및 동의서 작성",
-        "골절 부위 영상 검토 (X-ray, MRI, CT)",
-        "ERAS 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
+        "골절 부위 영상 검토 (엑스레이, MRI, CT)",
+        "수술 전 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
       ],
       warnings: [
         "항응고제 복용 중이면 반드시 의료진에게 알릴 것",
@@ -85,7 +85,7 @@ export const vpTemplate: SurgeryTemplate = {
         "골시멘트(PMMA) 주입 (약 30분 소요)",
         "시멘트 경화 확인 후 시술 종료",
         "회복실 관찰 후 병실 복귀",
-        "2시간 앙와위 안정 후 조기 보행 시작 (ERAS 프로토콜)",
+        "2시간 앙와위 안정 후 조기 보행 시작",
         "연하 가능 시 즉시 경구 식이 시작",
         "다중모드 통증 관리 (아세트아미노펜 650mg 하루 3회 + 필요 시 NSAIDs)",
       ],
@@ -113,7 +113,7 @@ export const vpTemplate: SurgeryTemplate = {
       phase: "inpatient",
       instructions: [
         "보행 거리 점진적 확대",
-        "X-ray 촬영으로 시멘트 위치 확인",
+        "엑스레이 촬영으로 시멘트 위치 확인",
         "통증 변화 평가",
         "골다공증 치료 약물 처방 확인",
       ],
@@ -169,7 +169,7 @@ export const vpTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "시술 부위 상태 확인",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "회복 설문 작성",
         "통증 변화 평가",
         "골다공증 약물 복용 상태 확인",
       ],
@@ -203,8 +203,8 @@ export const vpTemplate: SurgeryTemplate = {
       dateOffset: 42,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (추체 높이 유지 확인)",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "엑스레이 촬영 (추체 높이 유지 확인)",
+        "회복 설문 작성",
         "골다공증 치료 효과 평가",
         "보조기 착용 중단 여부 결정",
       ],
@@ -223,7 +223,7 @@ export const vpTemplate: SurgeryTemplate = {
       faq: [
         {
           question: "보조기를 언제 벗을 수 있나요?",
-          answer: "보통 4~6주 후 X-ray 확인 후 보조기 중단을 결정합니다. 골밀도와 통증 상태를 고려합니다.",
+          answer: "보통 4~6주 후 엑스레이 확인 후 보조기 중단을 결정합니다. 골밀도와 통증 상태를 고려합니다.",
         },
         {
           question: "어떤 운동이 좋은가요?",
@@ -237,8 +237,8 @@ export const vpTemplate: SurgeryTemplate = {
       dateOffset: 90,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "엑스레이 촬영",
+        "회복 설문 작성",
         "골밀도 검사 추적 (필요 시)",
         "일상 복귀 수준 평가",
       ],
@@ -261,7 +261,7 @@ export const vpTemplate: SurgeryTemplate = {
       dateOffset: 180,
       phase: "outpatient",
       instructions: [
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "회복 설문 작성",
         "기능적 회복 평가",
         "골다공증 치료 약물 조정",
       ],
@@ -283,7 +283,7 @@ export const vpTemplate: SurgeryTemplate = {
       dateOffset: 365,
       phase: "outpatient",
       instructions: [
-        "최종 PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "최종 회복 설문 작성",
         "골밀도 검사 (DEXA) 추적",
         "최종 기능 평가 및 장기 관리 계획",
         "골다공증 치료 지속 여부 상담",

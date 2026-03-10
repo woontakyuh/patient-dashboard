@@ -28,10 +28,10 @@ export const lpTemplate: SurgeryTemplate = {
       dateOffset: -1,
       rows: [
         { time: "오전", activity: "입원 수속 및 병실 배정", icon: "🏥" },
-        { time: "오전", activity: "혈액검사, 심전도, 흉부 X-ray, 경추 MRI 확인", icon: "🔬" },
+        { time: "오전", activity: "혈액검사, 심전도, 흉부 엑스레이, 경추 MRI 확인", icon: "🔬" },
         { time: "오후", activity: "마취과 상담 및 수술 동의서 작성", icon: "📋" },
         { time: "오후", activity: "경추 보조기 준비", icon: "🦴" },
-        { time: "저녁", activity: "ERAS 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
+        { time: "저녁", activity: "수술 전 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
       ],
     },
     {
@@ -62,7 +62,7 @@ export const lpTemplate: SurgeryTemplate = {
       dateOffset: 2,
       rows: [
         { time: "오전", activity: "드레싱 상태 확인", icon: "🩺" },
-        { time: "오전", activity: "X-ray 촬영 (수술 부위 확인)", icon: "📸" },
+        { time: "오전", activity: "엑스레이 촬영 (수술 부위 확인)", icon: "📸" },
         { time: "오후", activity: "보행 거리 확대", icon: "🚶" },
         { time: "오후", activity: "퇴원 교육 및 약 수령", icon: "📦" },
       ],
@@ -76,11 +76,11 @@ export const lpTemplate: SurgeryTemplate = {
       phase: "inpatient",
       instructions: [
         "입원 수속 및 병실 배정",
-        "수술 전 혈액검사, 심전도, 흉부 X-ray 시행",
+        "수술 전 혈액검사, 심전도, 흉부 엑스레이 시행",
         "경추 MRI 및 CT 영상 확인",
         "마취과 상담 및 동의서 작성",
         "경추 보조기 준비",
-        "ERAS 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
+        "수술 전 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
       ],
       warnings: [
         "항응고제/항혈소판제 복용 시 반드시 의료진에게 알릴 것",
@@ -108,7 +108,7 @@ export const lpTemplate: SurgeryTemplate = {
         "수술실 이동 및 추궁판 성형/절제술 시행 (약 2~2.5시간)",
         "후방 접근으로 척추관 확장",
         "회복실에서 마취 회복 후 병실 복귀",
-        "병동 복귀 즉시 경추 보조기 착용 하 조기 보행 시작 (ERAS 프로토콜)",
+        "병동 복귀 즉시 경추 보조기 착용 하 조기 보행 시작",
         "연하 가능 시 즉시 경구 식이 시작",
         "다중모드 통증 관리 (아세트아미노펜 650mg 하루 3회 + 필요 시 NSAIDs, 마약성 진통제 불사용)",
       ],
@@ -197,13 +197,13 @@ export const lpTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "수술 부위 상처 확인 및 실밥 제거",
-        "PROM 설문 작성 (VAS, NDI, EQ-5D)",
+        "회복 설문 작성",
         "신경학적 검진 (사지 감각, 근력, 반사, 보행)",
         "손 기능 회복 상태 평가",
       ],
       warnings: [
         "상처 감염 소견 시 추가 처치 필요",
-        "C5 palsy (삼각근 약화) 발생 시 보고",
+        "어깨 힘이 갑자기 약해지면 즉시 보고",
       ],
       dos: [
         "경추 보조기 지속 착용하기",
@@ -231,8 +231,8 @@ export const lpTemplate: SurgeryTemplate = {
       dateOffset: 42,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (수술 부위 경과 확인)",
-        "PROM 설문 작성 (VAS, NDI, EQ-5D)",
+        "엑스레이 촬영 (수술 부위 경과 확인)",
+        "회복 설문 작성",
         "경추 보조기 착용 중단 여부 결정",
         "재활 운동 시작 여부 평가",
       ],
@@ -264,7 +264,7 @@ export const lpTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "MRI 촬영 (척수 감압 상태 확인)",
-        "PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "회복 설문 작성",
         "경추 운동 범위 및 근력 평가",
         "일상 복귀 수준 평가",
       ],
@@ -288,7 +288,7 @@ export const lpTemplate: SurgeryTemplate = {
       dateOffset: 180,
       phase: "outpatient",
       instructions: [
-        "PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "회복 설문 작성",
         "기능적 회복 평가",
         "운동 강도 상향 가능 여부 판단",
       ],
@@ -311,7 +311,7 @@ export const lpTemplate: SurgeryTemplate = {
       dateOffset: 365,
       phase: "outpatient",
       instructions: [
-        "최종 PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "최종 회복 설문 작성",
         "MRI 촬영 (필요 시)",
         "최종 기능 평가 및 치료 종결 상담",
         "장기 관리 계획 수립",

@@ -28,10 +28,10 @@ export const acdfTemplate: SurgeryTemplate = {
       dateOffset: -1,
       rows: [
         { time: "오전", activity: "입원 수속 및 병실 배정", icon: "🏥" },
-        { time: "오전", activity: "혈액검사, 심전도, 흉부 X-ray", icon: "🔬" },
+        { time: "오전", activity: "혈액검사, 심전도, 흉부 엑스레이", icon: "🔬" },
         { time: "오후", activity: "마취과 상담 및 수술 동의서 작성", icon: "📋" },
         { time: "오후", activity: "경추 보조기 맞춤 확인", icon: "🦴" },
-        { time: "저녁", activity: "ERAS 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
+        { time: "저녁", activity: "수술 전 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
       ],
     },
     {
@@ -61,7 +61,7 @@ export const acdfTemplate: SurgeryTemplate = {
       day: "수술 후 2일 (POD#2)",
       dateOffset: 2,
       rows: [
-        { time: "오전", activity: "X-ray 촬영 (임플란트 위치 확인)", icon: "📸" },
+        { time: "오전", activity: "엑스레이 촬영 (임플란트 위치 확인)", icon: "📸" },
         { time: "오전", activity: "보행 거리 확대", icon: "🚶" },
         { time: "오후", activity: "퇴원 교육 및 약 수령", icon: "📦" },
         { time: "오후", activity: "경추 보조기 관리 교육", icon: "📋" },
@@ -76,10 +76,10 @@ export const acdfTemplate: SurgeryTemplate = {
       phase: "inpatient",
       instructions: [
         "입원 수속 및 병실 배정",
-        "수술 전 혈액검사, 심전도, 흉부 X-ray 시행",
+        "수술 전 혈액검사, 심전도, 흉부 엑스레이 시행",
         "마취과 상담 및 동의서 작성",
         "경추 보조기(필라델피아 칼라) 맞춤 확인",
-        "ERAS 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
+        "수술 전 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
       ],
       warnings: [
         "항응고제/항혈소판제 복용 시 반드시 의료진에게 알릴 것",
@@ -108,7 +108,7 @@ export const acdfTemplate: SurgeryTemplate = {
         "수술실 이동 및 전방 경추 추간판 제거 유합술 시행 (약 1.5~2시간)",
         "회복실에서 마취 회복 후 병실 복귀",
         "수술 후 상지 감각/운동 기능 및 삼킴 기능 확인",
-        "병동 복귀 즉시 경추 보조기 착용 하 조기 보행 시작 (ERAS 프로토콜)",
+        "병동 복귀 즉시 경추 보조기 착용 하 조기 보행 시작",
         "삼킴 검사 후 가능 시 즉시 경구 식이 시작",
         "다중모드 통증 관리 (아세트아미노펜 650mg 하루 3회 + 필요 시 NSAIDs, 마약성 진통제 불사용)",
       ],
@@ -196,7 +196,7 @@ export const acdfTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "수술 부위 상처 확인 및 실밥 제거",
-        "PROM 설문 작성 (VAS, NDI, EQ-5D)",
+        "회복 설문 작성",
         "신경학적 검진 (상지 감각, 근력, 반사)",
         "삼킴 기능 회복 확인",
       ],
@@ -225,7 +225,7 @@ export const acdfTemplate: SurgeryTemplate = {
         },
         {
           question: "경추 보조기는 언제 벗을 수 있나요?",
-          answer: "보통 수술 후 6~12주간 착용합니다. 유합 상태를 X-ray로 확인 후 의사가 결정합니다.",
+          answer: "보통 수술 후 6~12주간 착용합니다. 유합 상태를 엑스레이로 확인 후 의사가 결정합니다.",
         },
       ],
     },
@@ -235,8 +235,8 @@ export const acdfTemplate: SurgeryTemplate = {
       dateOffset: 42,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (유합 진행 상태 확인)",
-        "PROM 설문 작성 (VAS, NDI, EQ-5D)",
+        "엑스레이 촬영 (유합 진행 상태 확인)",
+        "회복 설문 작성",
         "경추 보조기 착용 지속/중단 결정",
         "재활 운동 시작 여부 평가",
       ],
@@ -272,12 +272,12 @@ export const acdfTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "CT 촬영 (유합 확인)",
-        "PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "회복 설문 작성",
         "경추 운동 범위 평가",
         "일상 복귀 수준 평가",
       ],
       warnings: [
-        "유합 부전(nonunion) 시 추가 치료 필요 가능",
+        "유합 부전 시 추가 치료 필요 가능",
         "인접 분절 증상 발생 시 보고",
       ],
       dos: [
@@ -302,8 +302,8 @@ export const acdfTemplate: SurgeryTemplate = {
       dateOffset: 180,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (유합 진행 확인)",
-        "PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "엑스레이 촬영 (유합 진행 확인)",
+        "회복 설문 작성",
         "기능적 회복 평가",
         "운동 강도 상향 가능 여부 판단",
       ],
@@ -326,7 +326,7 @@ export const acdfTemplate: SurgeryTemplate = {
       dateOffset: 365,
       phase: "outpatient",
       instructions: [
-        "최종 PROM 설문 작성 (VAS, NDI, JOA, EQ-5D)",
+        "최종 회복 설문 작성",
         "CT 촬영 (최종 유합 확인)",
         "최종 기능 평가 및 치료 종결 상담",
         "장기 관리 계획 수립",

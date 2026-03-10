@@ -28,10 +28,10 @@ export const fusionTemplate: SurgeryTemplate = {
       dateOffset: -1,
       rows: [
         { time: "오전", activity: "입원 수속 및 병실 배정", icon: "🏥" },
-        { time: "오전", activity: "혈액검사, 소변검사, 심전도, 흉부 X-ray", icon: "🔬" },
+        { time: "오전", activity: "혈액검사, 소변검사, 심전도, 흉부 엑스레이", icon: "🔬" },
         { time: "오후", activity: "마취과 상담 및 수술 동의서 작성", icon: "📋" },
         { time: "오후", activity: "보조기 맞춤 확인, 수술 부위 준비", icon: "🦴" },
-        { time: "저녁", activity: "ERAS 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
+        { time: "저녁", activity: "수술 전 금식: 수술 6시간 전 식사, 2시간 전 맑은 음료 가능", icon: "📋" },
       ],
     },
     {
@@ -54,7 +54,7 @@ export const fusionTemplate: SurgeryTemplate = {
         { time: "오전", activity: "보행 거리 확대", icon: "🚶" },
         { time: "오전", activity: "일반식 식이 진행", icon: "🍽️" },
         { time: "오전", activity: "배액관 제거", icon: "🩺" },
-        { time: "오후", activity: "X-ray 촬영 (나사못/케이지 위치 확인)", icon: "📸" },
+        { time: "오후", activity: "엑스레이 촬영 (나사못/케이지 위치 확인)", icon: "📸" },
       ],
     },
     {
@@ -86,11 +86,11 @@ export const fusionTemplate: SurgeryTemplate = {
       phase: "inpatient",
       instructions: [
         "입원 수속 및 병실 배정",
-        "수술 전 혈액검사, 소변검사, 심전도, 흉부 X-ray, 폐기능 검사",
+        "수술 전 혈액검사, 소변검사, 심전도, 흉부 엑스레이, 폐기능 검사",
         "마취과 상담 및 동의서 작성",
         "수술 부위 피부 준비",
         "보조기(TLSO) 맞춤 확인",
-        "ERAS 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
+        "수술 전 금식: 맑은 음료는 수술 2시간 전까지, 가벼운 식사는 6시간 전까지 가능",
       ],
       warnings: [
         "항응고제/항혈소판제 복용 시 반드시 의료진에게 알릴 것",
@@ -119,7 +119,7 @@ export const fusionTemplate: SurgeryTemplate = {
         "수술실 이동 및 요추 유합술 시행 (약 3~4시간)",
         "나사못(pedicle screw) 고정 및 케이지 삽입",
         "회복실에서 마취 회복 후 병실 복귀 (도뇨관 회복실에서 즉시 제거)",
-        "병동 복귀 즉시 보조기 착용 하 조기 보행 시작 (ERAS 프로토콜)",
+        "병동 복귀 즉시 보조기 착용 하 조기 보행 시작",
         "연하 가능 시 즉시 경구 식이 시작",
         "다중모드 통증 관리 (ESP block + 아세트아미노펜 650mg 하루 3회 + 필요 시 NSAIDs, PCA/마약성 진통제 불사용)",
       ],
@@ -150,7 +150,7 @@ export const fusionTemplate: SurgeryTemplate = {
         "보행 거리 점진적 확대",
         "일반식 식이 진행",
         "배액관 제거",
-        "X-ray 촬영 (나사못/케이지 위치 확인)",
+        "엑스레이 촬영 (나사못/케이지 위치 확인)",
         "수술 부위 드레싱 확인",
       ],
       warnings: [
@@ -167,7 +167,7 @@ export const fusionTemplate: SurgeryTemplate = {
       ],
       donts: [
         "보조기 없이 움직이지 않기",
-        "허리 숙이기/비틀기 절대 금지 (BLT precaution)",
+        "허리 숙이기/비틀기 절대 금지 (허리 굽힘·들기·비틀기 제한)",
         "무거운 물건 들지 않기",
         "장시간 같은 자세 유지하지 않기",
       ],
@@ -181,7 +181,7 @@ export const fusionTemplate: SurgeryTemplate = {
         "보행기 이용 단거리 보행 시작",
         "일반식으로 식이 진행",
         "드레싱 상태 확인",
-        "X-ray 촬영으로 나사못/케이지 위치 확인",
+        "엑스레이 촬영으로 나사못/케이지 위치 확인",
         "자연 배뇨 확인",
       ],
       warnings: [
@@ -197,7 +197,7 @@ export const fusionTemplate: SurgeryTemplate = {
       ],
       donts: [
         "보조기 없이 활동하지 않기",
-        "허리를 굽히거나 비틀지 않기 (BLT precaution)",
+        "허리를 굽히거나 비틀지 않기 (허리 굽힘·들기·비틀기 제한)",
         "쪼그려 앉지 않기",
       ],
     },
@@ -211,7 +211,7 @@ export const fusionTemplate: SurgeryTemplate = {
         "외래 예약 확인 (2주 후)",
         "보조기(TLSO) 착용 지침 (8~12주간)",
         "상처 관리법 교육",
-        "BLT precaution 교육 (Bending, Lifting, Twisting 금지)",
+        "허리 굽힘·들기·비틀기 제한 교육 (Bending, Lifting, Twisting 금지)",
         "금연 교육 (유합 성공을 위해 필수)",
       ],
       warnings: [
@@ -225,7 +225,7 @@ export const fusionTemplate: SurgeryTemplate = {
         "처방 약물 정해진 시간에 복용하기",
         "짧은 거리 산책 매일 하기",
         "상처 건조하게 유지하기",
-        "BLT precaution 철저히 지키기",
+        "허리 굽힘·들기·비틀기 제한 철저히 지키기",
       ],
       donts: [
         "5kg 이상 물건 들지 않기",
@@ -243,7 +243,7 @@ export const fusionTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "수술 부위 상처 확인 및 실밥 제거",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "회복 설문 작성",
         "신경학적 검진 (하지 감각, 근력, 반사)",
         "보행 상태 평가",
       ],
@@ -253,7 +253,7 @@ export const fusionTemplate: SurgeryTemplate = {
       ],
       dos: [
         "보조기 착용하고 걷기 운동 하루 20~30분",
-        "BLT precaution 유지",
+        "허리 굽힘·들기·비틀기 제한 유지",
         "처방 약물 꾸준히 복용하기",
       ],
       donts: [
@@ -264,10 +264,10 @@ export const fusionTemplate: SurgeryTemplate = {
       faq: [
         {
           question: "보조기를 언제 벗을 수 있나요?",
-          answer: "요추 유합술 후 보조기는 보통 8~12주간 착용합니다. 유합 진행 상태를 X-ray/CT로 확인 후 의사가 결정합니다.",
+          answer: "요추 유합술 후 보조기는 보통 8~12주간 착용합니다. 유합 진행 상태를 엑스레이/CT로 확인 후 의사가 결정합니다.",
         },
         {
-          question: "BLT precaution이 뭔가요?",
+          question: "허리 굽힘·들기·비틀기 제한이 뭔가요?",
           answer: "Bending(허리 굽히기), Lifting(물건 들기), Twisting(허리 비틀기)을 피하는 것입니다. 유합이 안정적으로 이루어질 때까지 (약 3~6개월) 이 세 동작을 최대한 자제해야 합니다.",
         },
         {
@@ -282,18 +282,18 @@ export const fusionTemplate: SurgeryTemplate = {
       dateOffset: 42,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (나사못/케이지 위치 확인)",
-        "PROM 설문 작성 (VAS, ODI, EQ-5D)",
+        "엑스레이 촬영 (나사못/케이지 위치 확인)",
+        "회복 설문 작성",
         "보행 및 일상 활동 평가",
         "보조기 착용 지속 여부 결정",
       ],
       warnings: [
-        "나사못 이완(loosening) 의심 소견 시 추가 검사",
+        "나사못 이완 의심 소견 시 추가 검사",
         "하지 방사통 재발 시 MRI 검사 필요",
       ],
       dos: [
         "가벼운 유산소 운동 시작 (걷기, 수중 걷기)",
-        "BLT precaution 계속 유지",
+        "허리 굽힘·들기·비틀기 제한 계속 유지",
         "바른 자세 습관 유지",
       ],
       donts: [
@@ -319,12 +319,12 @@ export const fusionTemplate: SurgeryTemplate = {
       phase: "outpatient",
       instructions: [
         "CT 촬영 (유합 진행 상태 확인)",
-        "PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
+        "회복 설문 작성",
         "코어 근력 강화 운동 시작 여부 판단",
         "일상 복귀 수준 평가",
       ],
       warnings: [
-        "유합 부전(nonunion) 의심 시 추가 치료 필요",
+        "유합 부전 의심 시 추가 치료 필요",
         "인접 분절 증상 발생 시 보고",
         "나사못 관련 통증 시 보고",
       ],
@@ -356,8 +356,8 @@ export const fusionTemplate: SurgeryTemplate = {
       dateOffset: 180,
       phase: "outpatient",
       instructions: [
-        "X-ray 촬영 (유합 진행 확인)",
-        "PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
+        "엑스레이 촬영 (유합 진행 확인)",
+        "회복 설문 작성",
         "기능적 회복 평가",
         "운동 강도 상향 가능 여부 판단",
       ],
@@ -388,7 +388,7 @@ export const fusionTemplate: SurgeryTemplate = {
       dateOffset: 365,
       phase: "outpatient",
       instructions: [
-        "최종 PROM 설문 작성 (VAS, ODI, JOA, EQ-5D)",
+        "최종 회복 설문 작성",
         "CT 촬영 (최종 유합 확인)",
         "최종 기능 평가 및 치료 종결 상담",
         "장기 관리 계획 수립",

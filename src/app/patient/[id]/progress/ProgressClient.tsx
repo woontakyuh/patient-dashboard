@@ -42,8 +42,8 @@ export default function ProgressClient({ id }: { id: string }) {
   const hasNdi = patient?.promInstruments.includes("ndi") ?? false;
   const hasJoa = patient?.promInstruments.includes("joa") ?? false;
 
-  const vasLabel1 = template?.vasConfig.scales[0]?.label ?? "허리 VAS";
-  const vasLabel2 = template?.vasConfig.scales[1]?.label ?? "다리 VAS";
+  const vasLabel1 = template?.vasConfig.scales[0]?.label ?? "허리 통증";
+  const vasLabel2 = template?.vasConfig.scales[1]?.label ?? "다리 통증/저림";
 
   // Combine mock trend with actual history for display
   const vasData = mockPromTrend.map((m) => ({
@@ -61,37 +61,37 @@ export default function ProgressClient({ id }: { id: string }) {
 
   const odiData = mockPromTrend.map((m) => ({
     label: m.label,
-    "ODI (%)": m.odi_percent,
+    "허리 기능(%)": m.odi_percent,
   }));
   history.forEach((e) => {
     if (e.odi_total_percent !== undefined) {
-      odiData.push({ label: e.date, "ODI (%)": e.odi_total_percent });
+      odiData.push({ label: e.date, "허리 기능(%)": e.odi_total_percent });
     }
   });
 
-  const ndiData: { label: string; "NDI (%)": number }[] = [];
+  const ndiData: { label: string; "목 기능(%)": number }[] = [];
   history.forEach((e) => {
     if (e.ndi_total_percent !== undefined) {
-      ndiData.push({ label: e.date, "NDI (%)": e.ndi_total_percent });
+      ndiData.push({ label: e.date, "목 기능(%)": e.ndi_total_percent });
     }
   });
 
   const joaData = mockPromTrend.map((m) => ({
     label: m.label,
-    "JOA 점수": m.joa_score,
+    "신경 기능 점수": m.joa_score,
   }));
   history.forEach((e) => {
     if (e.joa_score !== undefined) {
-      joaData.push({ label: e.date, "JOA 점수": e.joa_score });
+      joaData.push({ label: e.date, "신경 기능 점수": e.joa_score });
     }
   });
 
   const eqVasData = mockPromTrend.map((m) => ({
     label: m.label,
-    "EQ-VAS": m.eq_vas,
+    "전반 건강 점수": m.eq_vas,
   }));
   history.forEach((e) => {
-    eqVasData.push({ label: e.date, "EQ-VAS": e.eq_vas });
+    eqVasData.push({ label: e.date, "전반 건강 점수": e.eq_vas });
   });
 
   if (!patient) {
@@ -104,12 +104,12 @@ export default function ProgressClient({ id }: { id: string }) {
 
   return (
     <div className="animate-fade-in space-y-4 pb-24">
-      <h1 className="text-xl font-bold text-gray-900 px-1">PROM 추이</h1>
+      <h1 className="text-xl font-bold text-gray-900 px-1">건강 상태 변화</h1>
 
-      {/* VAS Chart */}
+      {/* Pain Trend */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          VAS 통증 점수 (낮을수록 양호)
+          통증 변화 (낮을수록 양호)
         </h2>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={vasData}>
@@ -124,11 +124,11 @@ export default function ProgressClient({ id }: { id: string }) {
         </ResponsiveContainer>
       </div>
 
-      {/* ODI Chart */}
+      {/* Lumbar Function Trend */}
       {hasOdi && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            ODI 장애 지수 (낮을수록 양호)
+            허리 기능 변화 (낮을수록 양호)
           </h2>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={odiData}>
@@ -136,17 +136,17 @@ export default function ProgressClient({ id }: { id: string }) {
               <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#94a3b8" />
               <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#94a3b8" tickFormatter={(v) => `${v}%`} />
               <Tooltip formatter={(value) => `${value}%`} />
-              <Line type="monotone" dataKey="ODI (%)" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="허리 기능(%)" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* NDI Chart */}
+      {/* Cervical Function Trend */}
       {hasNdi && ndiData.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            NDI 목 장애 지수 (낮을수록 양호)
+            목 기능 변화 (낮을수록 양호)
           </h2>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={ndiData}>
@@ -154,17 +154,17 @@ export default function ProgressClient({ id }: { id: string }) {
               <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#94a3b8" />
               <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#94a3b8" tickFormatter={(v) => `${v}%`} />
               <Tooltip formatter={(value) => `${value}%`} />
-              <Line type="monotone" dataKey="NDI (%)" stroke="#06b6d4" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="목 기능(%)" stroke="#06b6d4" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* JOA Chart */}
+      {/* Neurologic Function Trend */}
       {hasJoa && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            JOA 점수 (높을수록 양호, 만점 29)
+            신경 기능 점수 변화 (높을수록 양호, 만점 29)
           </h2>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={joaData}>
@@ -172,16 +172,16 @@ export default function ProgressClient({ id }: { id: string }) {
               <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#94a3b8" />
               <YAxis domain={[0, 29]} tick={{ fontSize: 10 }} stroke="#94a3b8" />
               <Tooltip />
-              <Line type="monotone" dataKey="JOA 점수" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="신경 기능 점수" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* EQ-VAS Chart */}
+      {/* Overall Health Trend */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          EQ-VAS 건강 상태 (높을수록 양호, 만점 100)
+          전반 건강 점수 변화 (높을수록 양호, 만점 100)
         </h2>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={eqVasData}>
@@ -189,7 +189,7 @@ export default function ProgressClient({ id }: { id: string }) {
             <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#94a3b8" />
             <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#94a3b8" />
             <Tooltip />
-            <Line type="monotone" dataKey="EQ-VAS" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="전반 건강 점수" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -205,10 +205,10 @@ export default function ProgressClient({ id }: { id: string }) {
               <th className="text-left py-2 pr-2">시점</th>
               <th className="text-center py-2 px-1">{vasLabel1.replace(" 통증", "").replace("/저림", "")}</th>
               <th className="text-center py-2 px-1">{vasLabel2.replace(" 통증", "").replace("/저림", "")}</th>
-              {hasOdi && <th className="text-center py-2 px-1">ODI</th>}
-              {hasNdi && <th className="text-center py-2 px-1">NDI</th>}
-              {hasJoa && <th className="text-center py-2 px-1">JOA</th>}
-              <th className="text-center py-2 pl-1">EQ-VAS</th>
+              {hasOdi && <th className="text-center py-2 px-1">허리 기능</th>}
+              {hasNdi && <th className="text-center py-2 px-1">목 기능</th>}
+              {hasJoa && <th className="text-center py-2 px-1">신경 기능</th>}
+              <th className="text-center py-2 pl-1">전반 건강</th>
             </tr>
           </thead>
           <tbody>

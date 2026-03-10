@@ -11,12 +11,12 @@ const STORAGE_KEY = "prom-history-v2";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 const allTabs: { id: PromInstrumentId; label: string }[] = [
-  { id: "vas", label: "VAS" },
-  { id: "odi", label: "ODI" },
-  { id: "ndi", label: "NDI" },
-  { id: "joa", label: "JOA" },
-  { id: "eq5d", label: "EQ-5D" },
-  { id: "eqvas", label: "EQ-VAS" },
+  { id: "vas", label: "통증" },
+  { id: "odi", label: "허리 기능" },
+  { id: "ndi", label: "목 기능" },
+  { id: "joa", label: "신경 기능" },
+  { id: "eq5d", label: "일상 기능" },
+  { id: "eqvas", label: "전반 건강" },
 ];
 
 function getVasEmoji(value: number) {
@@ -237,11 +237,11 @@ export default function PromClient({ id }: { id: string }) {
             {vasScales.map((s) => (
               <p key={s.id}><span className="text-gray-400">{s.label}</span> <span className="font-semibold">{vasValues[s.id] ?? 0}/10</span></p>
             ))}
-            {hasOdi && <p><span className="text-gray-400">ODI</span> <span className="font-semibold">{odiPercent}%</span></p>}
-            {hasNdi && <p><span className="text-gray-400">NDI</span> <span className="font-semibold">{ndiPercent}%</span></p>}
-            {hasJoa && <p><span className="text-gray-400">JOA</span> <span className="font-semibold">{joaTotal}점</span></p>}
-            <p><span className="text-gray-400">EQ-5D</span> <span className="font-semibold">{eq5dCode}</span></p>
-            <p><span className="text-gray-400">EQ-VAS</span> <span className="font-semibold">{eqVas}/100</span></p>
+            {hasOdi && <p><span className="text-gray-400">허리 기능</span> <span className="font-semibold">{odiPercent}%</span></p>}
+            {hasNdi && <p><span className="text-gray-400">목 기능</span> <span className="font-semibold">{ndiPercent}%</span></p>}
+            {hasJoa && <p><span className="text-gray-400">신경 기능</span> <span className="font-semibold">{joaTotal}점</span></p>}
+            <p><span className="text-gray-400">일상 기능</span> <span className="font-semibold">{eq5dCode}</span></p>
+            <p><span className="text-gray-400">전반 건강</span> <span className="font-semibold">{eqVas}/100</span></p>
           </div>
 
           <button
@@ -257,7 +257,7 @@ export default function PromClient({ id }: { id: string }) {
 
   return (
     <div className="animate-fade-in space-y-4 pb-24">
-      <h1 className="text-xl font-bold text-gray-900 px-1">PROM 설문</h1>
+      <h1 className="text-xl font-bold text-gray-900 px-1">건강 상태 설문</h1>
 
       {/* Tab Bar */}
       <div className="flex bg-white rounded-xl shadow-sm border border-gray-100 p-1 gap-0.5">
@@ -290,11 +290,11 @@ export default function PromClient({ id }: { id: string }) {
         })}
       </div>
 
-      {/* VAS Tab */}
+      {/* Pain Tab */}
       {activeTab === "vas" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-            VAS 통증 수준
+            통증 정도
           </h2>
 
           {vasScales.map((scale) => (
@@ -330,12 +330,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* ODI Tab */}
+      {/* Lumbar Function Tab */}
       {activeTab === "odi" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              ODI 장애 지수
+              허리 기능 지수
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {odiCompleted}/10 완료
@@ -382,7 +382,7 @@ export default function PromClient({ id }: { id: string }) {
           {odiCompleted === 10 && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                ODI 점수: <span className="font-bold text-blue-700">{odiTotal}/50 ({odiPercent}%)</span>
+                허리 기능 점수: <span className="font-bold text-blue-700">{odiTotal}/50 ({odiPercent}%)</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {odiPercent <= 20 ? "최소 장애" :
@@ -408,12 +408,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* NDI Tab */}
+      {/* Cervical Function Tab */}
       {activeTab === "ndi" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              NDI 목 장애 지수
+              목 기능 지수
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {ndiCompleted}/10 완료
@@ -460,7 +460,7 @@ export default function PromClient({ id }: { id: string }) {
           {ndiCompleted === 10 && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                NDI 점수: <span className="font-bold text-blue-700">{ndiTotal}/50 ({ndiPercent}%)</span>
+                목 기능 점수: <span className="font-bold text-blue-700">{ndiTotal}/50 ({ndiPercent}%)</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {ndiPercent <= 20 ? "최소 장애" :
@@ -486,12 +486,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* JOA Tab */}
+      {/* Neurologic Function Tab */}
       {activeTab === "joa" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              JOA 점수
+              신경 기능 점수
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {joaCompleted}/{joaItems.length} 완료
@@ -538,7 +538,7 @@ export default function PromClient({ id }: { id: string }) {
           {joaCompleted === joaItems.length && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                JOA 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
+                신경 기능 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 (정상 29점 만점 기준, 높을수록 양호)
@@ -561,12 +561,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* EQ-5D-5L Tab */}
+      {/* Daily Function Tab */}
       {activeTab === "eq5d" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              EQ-5D-5L 건강 상태
+              일상 기능 상태
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {eq5dCompleted}/5 완료
@@ -613,7 +613,7 @@ export default function PromClient({ id }: { id: string }) {
           {eq5dCompleted === 5 && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                EQ-5D 코드: <span className="font-bold text-blue-700">{eq5dCode}</span>
+                일상 기능 코드: <span className="font-bold text-blue-700">{eq5dCode}</span>
               </p>
             </div>
           )}
@@ -633,11 +633,11 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* EQ-VAS Tab */}
+      {/* Overall Health Tab */}
       {activeTab === "eqvas" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-            EQ-VAS 건강 온도계
+            전반적 건강 점수
           </h2>
 
           <p className="text-xs text-gray-400 mb-6">

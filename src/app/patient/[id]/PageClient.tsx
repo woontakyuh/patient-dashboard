@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import PatientCharacter, {
-  AvatarProfile,
-  SelfieCapture,
-} from "@/components/avatar/PatientCharacter";
-import AvatarOnboarding, {
-  buildDefaultAvatarProfile,
-} from "@/components/avatar/AvatarOnboarding";
+import PatientCharacter, { AvatarProfile } from "@/components/avatar/PatientCharacter";
 import { formatDate, dDay } from "@/lib/utils";
 import { getSurgeryTypeLabel } from "@/lib/surgery-classifier";
 import { usePatientData } from "@/lib/usePatientData";
@@ -19,7 +13,7 @@ import {
   getJourneyProgress,
 } from "@/data/journey-stages";
 import { getNextMicroPromCheckpoint } from "@/data/micro-prom-schedule";
-import type { JourneyStageId } from "@/lib/types";
+import type { JourneyStageId, PromInstrumentId } from "@/lib/types";
 import {
   ClipboardCheck,
   Stethoscope,
@@ -32,12 +26,12 @@ import {
   ChevronDown,
   ChevronUp,
   BookOpen,
-  MessageCircle,
   AlertTriangle,
   BellRing,
+  ClipboardList,
+  LineChart,
 } from "lucide-react";
 
-// lucide icon lookup
 const STAGE_ICONS: Record<string, React.ElementType> = {
   ClipboardCheck,
   Stethoscope,
@@ -47,43 +41,43 @@ const STAGE_ICONS: Record<string, React.ElementType> = {
   Award,
 };
 
+const PROM_LABELS: Record<PromInstrumentId, string> = {
+  vas: "통증 정도",
+  odi: "허리 기능",
+  ndi: "목 기능",
+  joa: "신경 기능",
+  eq5d: "일상 기능",
+  eqvas: "전반적 건강",
+};
+
+function buildAvatarProfile(age: number, sex: "M" | "F"): AvatarProfile {
+  const ageGroup: AvatarProfile["ageGroup"] = age >= 70 ? "senior" : age >= 40 ? "middle" : "young";
+  return {
+    sex,
+    ageGroup,
+    hairStyle: sex === "F" ? "long" : age >= 70 ? "bald" : "short",
+    glasses: age >= 65,
+  };
+}
+
 export default function PageClient({ id }: { id: string }) {
   const { patient } = usePatientData(id);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [avatarProfile, setAvatarProfile] = useState<AvatarProfile | null>(null);
-  const [avatarStateReady, setAvatarStateReady] = useState(false);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [expandedStage, setExpandedStage] = useState<JourneyStageId | null>(null);
 
-  const AVATAR_KEY = `patient-avatar-${id}`;
-  const AVATAR_PROFILE_KEY = `patient-avatar-profile-v1-${id}`;
   const CHECKLIST_KEY = `patient-checklist-v2-${id}`;
 
   const currentJourneyId = patient ? computeJourneyStage(patient.surgery.date) : "decision";
 
   useEffect(() => {
-    if (!patient) return;
-
-    setPhotoUrl(localStorage.getItem(AVATAR_KEY));
     try {
-      const savedProfile = localStorage.getItem(AVATAR_PROFILE_KEY);
-      if (savedProfile) {
-        setAvatarProfile(JSON.parse(savedProfile));
-      } else {
-        setAvatarProfile(buildDefaultAvatarProfile(patient.age, patient.sex));
-      }
-
       const saved = localStorage.getItem(CHECKLIST_KEY);
       if (saved) setChecklist(JSON.parse(saved));
     } catch {
-      /* ignore */
-      setAvatarProfile(buildDefaultAvatarProfile(patient.age, patient.sex));
-    } finally {
-      setAvatarStateReady(true);
+      // ignore malformed local storage
     }
-  }, [AVATAR_KEY, AVATAR_PROFILE_KEY, CHECKLIST_KEY, patient]);
+  }, [CHECKLIST_KEY]);
 
-  // Auto-expand current stage on first render
   useEffect(() => {
     setExpandedStage(currentJourneyId);
   }, [currentJourneyId]);
@@ -96,37 +90,11 @@ export default function PageClient({ id }: { id: string }) {
     );
   }
 
-  if (!avatarStateReady) {
-    return (
-      <div className="animate-fade-in p-6 text-center">
-        <p className="text-gray-500">아바타 정보를 불러오는 중입니다...</p>
-      </div>
-    );
-  }
-
-  if (!photoUrl || !avatarProfile) {
-    return (
-      <AvatarOnboarding
-        patientName={patient.name}
-        age={patient.age}
-        sex={patient.sex}
-        initialPhotoUrl={photoUrl}
-        initialProfile={avatarProfile}
-        onComplete={({ photoUrl: nextPhoto, profile }) => {
-          setPhotoUrl(nextPhoto);
-          setAvatarProfile(profile);
-          localStorage.setItem(AVATAR_KEY, nextPhoto);
-          localStorage.setItem(AVATAR_PROFILE_KEY, JSON.stringify(profile));
-        }}
-      />
-    );
-  }
+  const avatarProfile = buildAvatarProfile(patient.age, patient.sex);
 
   const progress = getJourneyProgress(patient.surgery.date);
   const nextMicroProm = getNextMicroPromCheckpoint(patient.surgery.date);
-  const nextFollowUp = patient.followUps.find(
-    (f) => new Date(f.date) > new Date()
-  );
+  const nextFollowUp = patient.followUps.find((f) => new Date(f.date) > new Date());
 
   function toggleCheck(key: string) {
     setChecklist((prev) => {
@@ -140,11 +108,9 @@ export default function PageClient({ id }: { id: string }) {
 
   return (
     <div className="animate-fade-in space-y-4">
-      {/* ── Patient Summary Card ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <div className="flex items-start gap-3">
           <PatientCharacter
-            photoUrl={photoUrl}
             size={56}
             profile={avatarProfile}
             mood={
@@ -161,43 +127,28 @@ export default function PageClient({ id }: { id: string }) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">
-                {patient.name}
-              </h1>
+              <h1 className="text-lg font-bold text-gray-900">{patient.name}</h1>
               <span className="text-xs text-gray-400">{patient.age}세</span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {patient.diagnosis.nameKo}
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5">{patient.diagnosis.nameKo}</p>
             <p className="text-xs text-gray-400">{patient.surgery.nameKo}</p>
             <p className="text-[10px] text-teal-700 bg-teal-50 border border-teal-100 rounded-full inline-flex px-2 py-0.5 mt-1">
               {getSurgeryTypeLabel(patient.surgery.type)}
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-xs text-gray-400">수술일</span>
-              <span className="text-xs font-medium text-gray-700">
-                {formatDate(patient.surgery.date)}
-              </span>
+              <span className="text-xs font-medium text-gray-700">{formatDate(patient.surgery.date)}</span>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-700">
                 {dDay(patient.surgery.date)}
               </span>
             </div>
           </div>
         </div>
-        <SelfieCapture
-          onCapture={(url) => {
-            setPhotoUrl(url);
-            localStorage.setItem(AVATAR_KEY, url);
-          }}
-        />
       </div>
 
-      {/* ── Progress Bar ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-navy-500">
-            나의 수술 여정
-          </span>
+          <span className="text-xs font-semibold text-navy-500">나의 수술 여정</span>
           <span className="text-xs font-bold text-teal-600">{progress}%</span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-2.5">
@@ -208,39 +159,32 @@ export default function PageClient({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* ── Next Follow-up ── */}
       {nextFollowUp && (
         <div className="bg-gradient-to-r from-navy-500 to-teal-500 rounded-2xl p-4 text-white">
           <p className="text-xs opacity-80">다음 외래 예약</p>
           <div className="flex items-center justify-between mt-1">
             <div>
               <p className="text-base font-bold">{nextFollowUp.label}</p>
-              <p className="text-xs opacity-80">
-                {formatDate(nextFollowUp.date)}
-              </p>
+              <p className="text-xs opacity-80">{formatDate(nextFollowUp.date)}</p>
             </div>
             <p className="text-2xl font-bold">{dDay(nextFollowUp.date)}</p>
           </div>
         </div>
       )}
 
-      {/* ── Micro-PROM Next Checkpoint ── */}
       {nextMicroProm && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <div className="flex items-center gap-2 mb-1">
             <BellRing className="w-4 h-4 text-blue-500" />
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Micro-PROM
+              회복 체크 설문
             </p>
           </div>
-          <p className="text-sm font-semibold text-gray-900">
-            다음 체크포인트: {nextMicroProm.label}
-          </p>
+          <p className="text-sm font-semibold text-gray-900">다음 체크포인트: {nextMicroProm.label}</p>
           <p className="text-xs text-gray-500 mt-1">
-            권장 설문:{" "}
-            {nextMicroProm.recommendedInstruments
-              .filter((id) => patient.promInstruments.includes(id))
-              .map((id) => id.toUpperCase())
+            권장 항목: {nextMicroProm.recommendedInstruments
+              .filter((ins) => patient.promInstruments.includes(ins))
+              .map((ins) => PROM_LABELS[ins])
               .join(", ")}
           </p>
           <Link
@@ -252,7 +196,6 @@ export default function PageClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* ── Journey Timeline ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
           수술 여정 타임라인
@@ -267,12 +210,9 @@ export default function PageClient({ id }: { id: string }) {
 
             return (
               <div key={stage.id} className="flex">
-                {/* Timeline line + node */}
                 <div className="flex flex-col items-center mr-3 relative">
                   <button
-                    onClick={() =>
-                      setExpandedStage(isExpanded ? null : stage.id)
-                    }
+                    onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                       status === "completed"
                         ? "bg-green-500 text-white"
@@ -298,12 +238,9 @@ export default function PageClient({ id }: { id: string }) {
                   )}
                 </div>
 
-                {/* Content */}
                 <div className={`flex-1 pb-4 ${isLast ? "pb-0" : ""}`}>
                   <button
-                    onClick={() =>
-                      setExpandedStage(isExpanded ? null : stage.id)
-                    }
+                    onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
                     className="w-full text-left"
                   >
                     <div className="flex items-center justify-between">
@@ -319,9 +256,7 @@ export default function PageClient({ id }: { id: string }) {
                         >
                           {stage.titleKo}
                         </p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">
-                          {stage.subtitle}
-                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{stage.subtitle}</p>
                       </div>
                       {status !== "upcoming" &&
                         (isExpanded ? (
@@ -332,14 +267,10 @@ export default function PageClient({ id }: { id: string }) {
                     </div>
                   </button>
 
-                  {/* Expanded panel */}
                   {isExpanded && status !== "upcoming" && (
                     <div className="mt-2 space-y-3 animate-fade-in">
-                      <p className="text-xs text-gray-600">
-                        {stage.description}
-                      </p>
+                      <p className="text-xs text-gray-600">{stage.description}</p>
 
-                      {/* Tasks checklist */}
                       <div className="space-y-1.5">
                         {stage.tasks.map((task, ti) => {
                           const key = `journey-${stage.id}-${ti}`;
@@ -361,13 +292,7 @@ export default function PageClient({ id }: { id: string }) {
                               >
                                 {checked && <Check className="w-2.5 h-2.5" />}
                               </span>
-                              <span
-                                className={
-                                  checked
-                                    ? "text-gray-400 line-through"
-                                    : "text-gray-700"
-                                }
-                              >
+                              <span className={checked ? "text-gray-400 line-through" : "text-gray-700"}>
                                 {task}
                               </span>
                             </button>
@@ -375,25 +300,16 @@ export default function PageClient({ id }: { id: string }) {
                         })}
                       </div>
 
-                      {/* Quick links */}
                       <div className="flex gap-2">
-                        {currentStage &&
-                          stage.clinicalStageIds.includes(currentStage.id) && (
-                            <Link
-                              href={`/patient/${patient.id}/instructions/${currentStage.id}`}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-[10px] font-semibold hover:bg-teal-100 transition-colors"
-                            >
-                              <BookOpen className="w-3 h-3" />
-                              상세 안내
-                            </Link>
-                          )}
-                        <Link
-                          href={`/patient/${patient.id}/education`}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-50 text-navy-500 rounded-lg text-[10px] font-semibold hover:bg-navy-100 transition-colors"
-                        >
-                          <BookOpen className="w-3 h-3" />
-                          교육 자료
-                        </Link>
+                        {currentStage && stage.clinicalStageIds.includes(currentStage.id) && (
+                          <Link
+                            href={`/patient/${patient.id}/instructions/${currentStage.id}`}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-[10px] font-semibold hover:bg-teal-100 transition-colors"
+                          >
+                            <BookOpen className="w-3 h-3" />
+                            상세 안내
+                          </Link>
+                        )}
                       </div>
                     </div>
                   )}
@@ -404,7 +320,6 @@ export default function PageClient({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* ── Current Stage Warnings ── */}
       {currentStage && currentStage.warnings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
           <h3 className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1.5">
@@ -421,27 +336,22 @@ export default function PageClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* ── Quick Actions ── */}
       <div className="grid grid-cols-2 gap-3">
         <Link
-          href={`/patient/${patient.id}/chat`}
+          href={`/patient/${patient.id}/prom`}
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-teal-200 transition-colors"
         >
-          <MessageCircle className="w-6 h-6 text-teal-500 mb-2" />
-          <p className="text-sm font-semibold text-gray-900">AI 상담</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">
-            궁금한 점을 물어보세요
-          </p>
+          <ClipboardList className="w-6 h-6 text-teal-500 mb-2" />
+          <p className="text-sm font-semibold text-gray-900">건강 설문</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">오늘 상태를 기록하세요</p>
         </Link>
         <Link
-          href={`/patient/${patient.id}/education`}
+          href={`/patient/${patient.id}/progress`}
           className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:border-navy-200 transition-colors"
         >
-          <BookOpen className="w-6 h-6 text-navy-400 mb-2" />
-          <p className="text-sm font-semibold text-gray-900">교육 자료</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">
-            단계별 안내를 확인하세요
-          </p>
+          <LineChart className="w-6 h-6 text-navy-400 mb-2" />
+          <p className="text-sm font-semibold text-gray-900">회복 추이</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">회복 변화 확인</p>
         </Link>
       </div>
     </div>

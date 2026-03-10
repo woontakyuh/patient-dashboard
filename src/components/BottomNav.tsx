@@ -2,51 +2,64 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, MessageCircle, BarChart3, ClipboardList } from "lucide-react";
+import { Home, BarChart3, ClipboardList, LineChart } from "lucide-react";
 
-function getPatientId(pathname: string): string {
-  const match = pathname.match(/^\/patient\/([^/]+)/);
-  return match?.[1] ?? "P001";
+function getPatientId(pathname: string): string | null {
+  const patientPath = pathname.match(/^\/patient\/([^/]+)/);
+  if (patientPath?.[1]) return patientPath[1];
+
+  const rootPath = pathname.match(/^\/([^/]+)/);
+  const firstSegment = rootPath?.[1];
+  if (!firstSegment) return null;
+  if (["patient", "qr", "_next"].includes(firstSegment)) return null;
+
+  return firstSegment;
 }
 
 export default function BottomNav() {
   const pathname = usePathname();
+
+  if (pathname.startsWith("/qr/")) {
+    return null;
+  }
+
   const patientId = getPatientId(pathname);
+  if (!patientId) {
+    return null;
+  }
 
   const navItems = [
     {
       label: "홈",
-      href: `/patient/${patientId}`,
+      href: `/${patientId}`,
       icon: Home,
+      matchPrefix: `/${patientId}`,
+      exact: true,
     },
     {
-      label: "교육",
-      href: `/patient/${patientId}/education`,
-      icon: BookOpen,
-      matchPrefix: `/patient/${patientId}/education`,
-    },
-    {
-      label: "상담",
-      href: `/patient/${patientId}/chat`,
-      icon: MessageCircle,
-      matchPrefix: `/patient/${patientId}/chat`,
-    },
-    {
-      label: "PROM",
+      label: "설문",
       href: `/patient/${patientId}/prom`,
-      icon: BarChart3,
+      icon: ClipboardList,
       matchPrefix: `/patient/${patientId}/prom`,
+    },
+    {
+      label: "추이",
+      href: `/patient/${patientId}/progress`,
+      icon: LineChart,
+      matchPrefix: `/patient/${patientId}/progress`,
     },
     {
       label: "안내",
       href: `/patient/${patientId}/timeline`,
-      icon: ClipboardList,
+      icon: BarChart3,
       matchPrefix: `/patient/${patientId}/timeline`,
     },
   ];
 
   function isActive(item: (typeof navItems)[0]) {
-    if (item.label === "홈") return pathname === item.href;
+    if (item.exact) {
+      return pathname === item.href;
+    }
     const prefix = item.matchPrefix ?? item.href;
     return pathname.startsWith(prefix);
   }
@@ -66,9 +79,7 @@ export default function BottomNav() {
               }`}
             >
               <Icon className="w-5 h-5" strokeWidth={active ? 2 : 1.5} />
-              <span
-                className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}
-              >
+              <span className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}>
                 {item.label}
               </span>
               {active && (
