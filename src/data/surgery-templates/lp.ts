@@ -203,7 +203,6 @@ export const lpTemplate: SurgeryTemplate = {
       ],
       warnings: [
         "상처 감염 소견 시 추가 처치 필요",
-        "어깨 힘이 갑자기 약해지면 즉시 보고",
       ],
       dos: [
         "경추 보조기 지속 착용하기",

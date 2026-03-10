@@ -7,14 +7,14 @@ import type { PromResult, PromInstrumentId } from "@/lib/types";
 import { logAuditEvent } from "@/lib/audit-log";
 import { usePatientData } from "@/lib/usePatientData";
 
-const STORAGE_KEY = "prom-history-v2";
+const LEGACY_STORAGE_KEY = "prom-history-v2";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 const allTabs: { id: PromInstrumentId; label: string }[] = [
   { id: "vas", label: "통증" },
   { id: "odi", label: "허리 기능" },
   { id: "ndi", label: "목 기능" },
-  { id: "joa", label: "신경 기능" },
+  { id: "joa", label: "JOA" },
   { id: "eq5d", label: "일상 기능" },
   { id: "eqvas", label: "전반 건강" },
 ];
@@ -27,18 +27,33 @@ function getVasEmoji(value: number) {
   return "\u{1F622}";
 }
 
-function getHistory(): PromResult[] {
+function getStorageKey(patientId: string): string {
+  return `prom-history-v3-${patientId}`;
+}
+
+function getHistory(patientId: string): PromResult[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const scopedRaw = localStorage.getItem(getStorageKey(patientId));
+    if (scopedRaw) {
+      return JSON.parse(scopedRaw);
+    }
+
+    // Backward compatibility: migrate legacy shared history into per-patient key.
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    const legacyEntries: PromResult[] = legacyRaw ? JSON.parse(legacyRaw) : [];
+    const filtered = legacyEntries.filter((entry) => entry.patientId === patientId);
+    if (filtered.length > 0) {
+      localStorage.setItem(getStorageKey(patientId), JSON.stringify(filtered));
+    }
+    return filtered;
   } catch {
     return [];
   }
 }
 
-function saveHistory(entries: PromResult[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+function saveHistory(patientId: string, entries: PromResult[]) {
+  localStorage.setItem(getStorageKey(patientId), JSON.stringify(entries));
 }
 
 function getPromApiUrl(ptNo: string): string {
@@ -80,8 +95,8 @@ export default function PromClient({ id }: { id: string }) {
   const [history, setHistory] = useState<PromResult[]>([]);
 
   useEffect(() => {
-    setHistory(getHistory());
-  }, []);
+    setHistory(getHistory(id));
+  }, [id]);
 
   // Initialize VAS values
   useEffect(() => {
@@ -93,6 +108,14 @@ export default function PromClient({ id }: { id: string }) {
   const hasOdi = patient?.promInstruments.includes("odi") ?? false;
   const hasNdi = patient?.promInstruments.includes("ndi") ?? false;
   const hasJoa = patient?.promInstruments.includes("joa") ?? false;
+  const joaMin = joaItems.reduce(
+    (sum, item) => sum + Math.min(...item.options.map((option) => option.score)),
+    0
+  );
+  const joaMax = joaItems.reduce(
+    (sum, item) => sum + Math.max(...item.options.map((option) => option.score)),
+    0
+  );
 
   const odiCompleted = Object.keys(odiScores).length;
   const odiTotal = Object.values(odiScores).reduce((a, b) => a + b, 0);
@@ -146,8 +169,8 @@ export default function PromClient({ id }: { id: string }) {
       eq_vas: eqVas,
       timestamp: new Date().toISOString(),
     };
-    const updated = [...history, entry];
-    saveHistory(updated);
+    const updated = [...history, entry].sort((a, b) => a.date.localeCompare(b.date));
+    saveHistory(id, updated);
     setHistory(updated);
     setIsSubmitting(true);
 
@@ -239,7 +262,7 @@ export default function PromClient({ id }: { id: string }) {
             ))}
             {hasOdi && <p><span className="text-gray-400">허리 기능</span> <span className="font-semibold">{odiPercent}%</span></p>}
             {hasNdi && <p><span className="text-gray-400">목 기능</span> <span className="font-semibold">{ndiPercent}%</span></p>}
-            {hasJoa && <p><span className="text-gray-400">신경 기능</span> <span className="font-semibold">{joaTotal}점</span></p>}
+            {hasJoa && <p><span className="text-gray-400">JOA 신경 기능</span> <span className="font-semibold">{joaTotal}점</span></p>}
             <p><span className="text-gray-400">일상 기능</span> <span className="font-semibold">{eq5dCode}</span></p>
             <p><span className="text-gray-400">전반 건강</span> <span className="font-semibold">{eqVas}/100</span></p>
           </div>
@@ -486,12 +509,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* Neurologic Function Tab */}
+      {/* JOA Tab */}
       {activeTab === "joa" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              신경 기능 점수
+              JOA 신경 기능 점수
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {joaCompleted}/{joaItems.length} 완료
@@ -499,7 +522,7 @@ export default function PromClient({ id }: { id: string }) {
           </div>
 
           <p className="text-xs text-gray-400 mb-5">
-            현재 상태에 가장 가까운 것을 선택해 주세요.
+            현재 상태에 가장 가까운 것을 선택해 주세요. (JOA, {joaMax}점 만점)
           </p>
 
           <div className="space-y-6">
@@ -538,10 +561,10 @@ export default function PromClient({ id }: { id: string }) {
           {joaCompleted === joaItems.length && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                신경 기능 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
+                JOA 신경 기능 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                (정상 29점 만점 기준, 높을수록 양호)
+                (범위 {joaMin}점 ~ {joaMax}점, 높을수록 양호)
               </p>
             </div>
           )}
@@ -644,26 +667,23 @@ export default function PromClient({ id }: { id: string }) {
             오늘 본인의 전반적인 건강 상태를 0~100 사이에서 표시해 주세요.
           </p>
 
-          <div className="flex items-center justify-center gap-8">
-            {/* Vertical thermometer */}
-            <div className="flex flex-col items-center">
-              <span className="text-xs text-green-600 font-semibold mb-2">100 (최상)</span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={eqVas}
-                onChange={(e) => setEqVas(Number(e.target.value))}
-                className="eq-vas-slider"
-              />
-              <span className="text-xs text-red-500 font-semibold mt-2">0 (최악)</span>
+          <div className="space-y-4">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={eqVas}
+              onChange={(e) => setEqVas(Number(e.target.value))}
+              className="w-full eq-vas-slider"
+            />
+            <div className="flex justify-between text-[11px] text-gray-400">
+              <span>0 (최악)</span>
+              <span>100 (최상)</span>
             </div>
-
-            {/* Value display */}
             <div className="text-center">
               <div className="text-5xl font-bold text-blue-600">{eqVas}</div>
               <p className="text-sm text-gray-400 mt-1">/ 100</p>
-              <p className="text-xs text-gray-500 mt-3 max-w-[140px]">
+              <p className="text-xs text-gray-500 mt-3">
                 {eqVas >= 80 ? "매우 좋은 상태" :
                  eqVas >= 60 ? "양호한 상태" :
                  eqVas >= 40 ? "보통" :

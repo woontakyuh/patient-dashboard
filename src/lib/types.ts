@@ -99,7 +99,7 @@ export interface PromResult {
   odi_total_percent?: number; // 0–100
   ndi_scores?: number[]; // 10 items, each 0–5 (cervical)
   ndi_total_percent?: number; // 0–100
-  joa_score?: number; // 0–29
+  joa_score?: number; // 0–17
   joa_recovery_rate?: number | null; // % or null if no preop
   eq5d_dimensions: number[]; // 5 items, each 1–5
   eq5d_code: string; // e.g. "11111"

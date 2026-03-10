@@ -68,24 +68,21 @@ input[type="range"].vas-slider::-webkit-slider-thumb {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
-/* EQ-VAS Vertical Slider */
+/* Overall health slider */
 input[type="range"].eq-vas-slider {
   -webkit-appearance: none;
   appearance: none;
-  writing-mode: vertical-lr;
-  direction: rtl;
-  width: 12px;
-  height: 260px;
-  border-radius: 6px;
-  background: linear-gradient(to top, #ef4444, #eab308, #22c55e);
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #ef4444, #eab308, #22c55e);
   outline: none;
 }
 
 input[type="range"].eq-vas-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: white;
   cursor: pointer;

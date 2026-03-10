@@ -307,55 +307,65 @@ export const eq5dDimensions: Eq5dDimension[] = [
   },
 ];
 
-// ── JOA Score (Lumbar - Patient-Fillable Items) ─────────────────
+// ── JOA Score (17-point, patient-facing simplified wording) ─────
 export const joaItems: JoaItem[] = [
   {
-    id: "lowBackPain",
-    title: "허리 통증",
+    id: "upperMotor",
+    title: "손/팔 움직임",
     options: [
-      { label: "없음", score: 3 },
-      { label: "가끔 가벼운 통증이 있다", score: 2 },
-      { label: "자주 또는 지속적으로 통증이 있다", score: 1 },
-      { label: "지속적으로 심한 통증이 있다", score: 0 },
+      { label: "젓가락 사용, 단추 채우기 등 손동작이 정상이다", score: 4 },
+      { label: "약간 서툴지만 대부분 가능하다", score: 3 },
+      { label: "일부 동작이 어렵다", score: 2 },
+      { label: "일상 손동작이 많이 어렵다", score: 1 },
+      { label: "손 사용이 거의 불가능하다", score: 0 },
     ],
   },
   {
-    id: "legPainTingling",
-    title: "다리 통증 / 저림",
+    id: "lowerMotor",
+    title: "다리/보행",
     options: [
-      { label: "없음", score: 3 },
-      { label: "가끔 가벼운 증상이 있다", score: 2 },
-      { label: "자주 또는 지속적으로 증상이 있다", score: 1 },
-      { label: "지속적으로 심한 증상이 있다", score: 0 },
+      { label: "평지/계단 보행이 정상이다", score: 4 },
+      { label: "약간 불편하지만 독립 보행 가능", score: 3 },
+      { label: "보행이 느리거나 비틀거림이 있다", score: 2 },
+      { label: "보조기/도움이 필요하다", score: 1 },
+      { label: "독립 보행이 불가능하다", score: 0 },
     ],
   },
   {
-    id: "gait",
-    title: "보행 능력",
+    id: "sensoryUpper",
+    title: "손 감각",
     options: [
-      { label: "정상 보행 가능", score: 3 },
-      { label: "500m 이상 걸을 수 있으나 통증/저림이 있다", score: 2 },
-      { label: "500m 이상 걸을 수 없다", score: 1 },
-      { label: "100m 이상 걸을 수 없다", score: 0 },
+      { label: "정상", score: 2 },
+      { label: "저림/둔함이 약간 있다", score: 1 },
+      { label: "감각 저하가 뚜렷하다", score: 0 },
     ],
   },
   {
-    id: "adl",
-    title: "일상생활 제한",
+    id: "sensoryTrunk",
+    title: "몸통 감각",
     options: [
-      { label: "심하게 제한됨", score: 0 },
-      { label: "중간 정도 제한됨", score: 1 },
-      { label: "약간 제한됨", score: 2 },
-      { label: "제한 없음", score: 3 },
+      { label: "정상", score: 2 },
+      { label: "저림/둔함이 약간 있다", score: 1 },
+      { label: "감각 저하가 뚜렷하다", score: 0 },
+    ],
+  },
+  {
+    id: "sensoryLower",
+    title: "다리 감각",
+    options: [
+      { label: "정상", score: 2 },
+      { label: "저림/둔함이 약간 있다", score: 1 },
+      { label: "감각 저하가 뚜렷하다", score: 0 },
     ],
   },
   {
     id: "bladder",
     title: "배뇨 기능",
     options: [
-      { label: "정상", score: 0 },
-      { label: "가벼운 배뇨 장애 (빈뇨, 잔뇨감 등)", score: -1 },
-      { label: "심한 배뇨 장애 또는 요실금", score: -3 },
+      { label: "정상", score: 3 },
+      { label: "가벼운 불편이 있다", score: 2 },
+      { label: "중간 정도 불편이 있다", score: 1 },
+      { label: "심한 배뇨 장애가 있다", score: 0 },
     ],
   },
 ];
@@ -368,7 +378,7 @@ export const mockPromTrend = [
     vas_back: 7,
     vas_leg: 8,
     odi_percent: 62,
-    joa_score: 8,
+    joa_score: 7,
     eq_vas: 35,
   },
   {
@@ -377,7 +387,7 @@ export const mockPromTrend = [
     vas_back: 3,
     vas_leg: 2,
     odi_percent: 38,
-    joa_score: 18,
+    joa_score: 10,
     eq_vas: 60,
   },
   {
@@ -386,7 +396,7 @@ export const mockPromTrend = [
     vas_back: 2,
     vas_leg: 1,
     odi_percent: 22,
-    joa_score: 23,
+    joa_score: 13,
     eq_vas: 75,
   },
   {
@@ -395,7 +405,7 @@ export const mockPromTrend = [
     vas_back: 1,
     vas_leg: 0,
     odi_percent: 10,
-    joa_score: 27,
+    joa_score: 15,
     eq_vas: 88,
   },
 ];
