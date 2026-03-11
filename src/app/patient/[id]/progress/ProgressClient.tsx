@@ -93,7 +93,7 @@ export default function ProgressClient({ id }: { id: string }) {
     .filter((e) => e.joa_score !== undefined)
     .map((e) => ({
       label: e.date,
-      "JOA 점수": e.joa_score as number,
+      "신경 기능 점수": e.joa_score as number,
     }));
 
   const eqVasData = history.map((e) => ({
@@ -184,7 +184,7 @@ export default function ProgressClient({ id }: { id: string }) {
           {hasJoa && joaData.length > 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                JOA 신경 기능 점수 변화 (범위 {joaMin}~{joaMax}, 높을수록 양호)
+                신경 기능 점수 변화 (범위 {joaMin}~{joaMax}, 높을수록 양호)
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={joaData}>
@@ -192,7 +192,7 @@ export default function ProgressClient({ id }: { id: string }) {
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#94a3b8" />
                   <YAxis domain={[joaMin, joaMax]} tick={{ fontSize: 10 }} stroke="#94a3b8" />
                   <Tooltip />
-                  <Line type="monotone" dataKey="JOA 점수" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="신경 기능 점수" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -225,7 +225,7 @@ export default function ProgressClient({ id }: { id: string }) {
                   <th className="text-center py-2 px-1">{vasLabel2.replace(" 통증", "").replace("/저림", "")}</th>
                   {hasOdi && <th className="text-center py-2 px-1">허리 기능</th>}
                   {hasNdi && <th className="text-center py-2 px-1">목 기능</th>}
-                  {hasJoa && <th className="text-center py-2 px-1">JOA</th>}
+                  {hasJoa && <th className="text-center py-2 px-1">신경 기능</th>}
                   <th className="text-center py-2 pl-1">전반 건강</th>
                 </tr>
               </thead>

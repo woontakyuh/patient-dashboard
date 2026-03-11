@@ -14,7 +14,7 @@ const allTabs: { id: PromInstrumentId; label: string }[] = [
   { id: "vas", label: "통증" },
   { id: "odi", label: "허리 기능" },
   { id: "ndi", label: "목 기능" },
-  { id: "joa", label: "JOA" },
+  { id: "joa", label: "신경 기능 점수" },
   { id: "eq5d", label: "일상 기능" },
   { id: "eqvas", label: "전반 건강" },
 ];
@@ -262,7 +262,7 @@ export default function PromClient({ id }: { id: string }) {
             ))}
             {hasOdi && <p><span className="text-gray-400">허리 기능</span> <span className="font-semibold">{odiPercent}%</span></p>}
             {hasNdi && <p><span className="text-gray-400">목 기능</span> <span className="font-semibold">{ndiPercent}%</span></p>}
-            {hasJoa && <p><span className="text-gray-400">JOA 신경 기능</span> <span className="font-semibold">{joaTotal}점</span></p>}
+            {hasJoa && <p><span className="text-gray-400">신경 기능 점수</span> <span className="font-semibold">{joaTotal}점</span></p>}
             <p><span className="text-gray-400">일상 기능</span> <span className="font-semibold">{eq5dCode}</span></p>
             <p><span className="text-gray-400">전반 건강</span> <span className="font-semibold">{eqVas}/100</span></p>
           </div>
@@ -509,12 +509,12 @@ export default function PromClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* JOA Tab */}
+      {/* Neurologic Function Tab */}
       {activeTab === "joa" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-              JOA 신경 기능 점수
+              신경 기능 점수
             </h2>
             <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
               {joaCompleted}/{joaItems.length} 완료
@@ -522,7 +522,7 @@ export default function PromClient({ id }: { id: string }) {
           </div>
 
           <p className="text-xs text-gray-400 mb-5">
-            현재 상태에 가장 가까운 것을 선택해 주세요. (JOA, {joaMax}점 만점)
+            현재 상태에 가장 가까운 것을 선택해 주세요. ({joaMax}점 만점)
           </p>
 
           <div className="space-y-6">
@@ -561,7 +561,7 @@ export default function PromClient({ id }: { id: string }) {
           {joaCompleted === joaItems.length && (
             <div className="mt-5 p-3 bg-blue-50 rounded-xl text-center">
               <p className="text-sm text-gray-600">
-                JOA 신경 기능 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
+                신경 기능 점수: <span className="font-bold text-blue-700">{joaTotal}점</span>
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 (범위 {joaMin}점 ~ {joaMax}점, 높을수록 양호)
