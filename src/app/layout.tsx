@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import AppHeader from "@/components/AppHeader";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,14 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-200">
-          <div className="max-w-[480px] mx-auto px-4 h-14 flex items-center justify-between">
-            <span className="text-base font-bold text-navy-500 tracking-tight">
-              SpineTrack
-            </span>
-          </div>
-        </header>
+        <AppHeader />
 
         {/* Main */}
         <main className="max-w-[480px] mx-auto px-4 py-5 pb-24 md:pb-8">
