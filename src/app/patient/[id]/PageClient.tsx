@@ -12,8 +12,15 @@ import {
   getJourneyStageStatus,
   getJourneyProgress,
 } from "@/data/journey-stages";
-import { getNextMicroPromCheckpoint } from "@/data/micro-prom-schedule";
-import type { JourneyStageId, PromInstrumentId } from "@/lib/types";
+import {
+  MICRO_PROM_SCHEDULE,
+  getNextMicroPromCheckpoint,
+} from "@/data/micro-prom-schedule";
+import type {
+  JourneyStageId,
+  PromInstrumentId,
+  PromResult,
+} from "@/lib/types";
 import {
   ClipboardCheck,
   Stethoscope,
@@ -60,9 +67,52 @@ function buildAvatarProfile(age: number, sex: "M" | "F"): AvatarProfile {
   };
 }
 
+const LEGACY_PROM_STORAGE_KEY = "prom-history-v2";
+
+function getPromStorageKey(patientId: string): string {
+  return `prom-history-v3-${patientId}`;
+}
+
+function getPromHistory(patientId: string): PromResult[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const scopedRaw = localStorage.getItem(getPromStorageKey(patientId));
+    if (scopedRaw) return JSON.parse(scopedRaw) as PromResult[];
+
+    const legacyRaw = localStorage.getItem(LEGACY_PROM_STORAGE_KEY);
+    const legacyEntries: PromResult[] = legacyRaw ? JSON.parse(legacyRaw) : [];
+    return legacyEntries.filter((entry) => entry.patientId === patientId);
+  } catch {
+    return [];
+  }
+}
+
+function toStartOfDay(dateInput: string | Date): Date {
+  const date = typeof dateInput === "string" ? new Date(dateInput) : new Date(dateInput);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function getDayDiff(from: string | Date, to: string | Date): number {
+  const fromDay = toStartOfDay(from);
+  const toDay = toStartOfDay(to);
+  return Math.round((toDay.getTime() - fromDay.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+type TodayTodo = {
+  key: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  canCheck: boolean;
+  checkLabel?: string;
+  actionLabel: string;
+};
+
 export default function PageClient({ id }: { id: string }) {
   const { patient } = usePatientData(id);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const [submittedPromToday, setSubmittedPromToday] = useState(false);
   const [expandedStage, setExpandedStage] = useState<JourneyStageId | null>(null);
 
   const CHECKLIST_KEY = `patient-checklist-v2-${id}`;
@@ -81,6 +131,12 @@ export default function PageClient({ id }: { id: string }) {
   useEffect(() => {
     setExpandedStage(currentJourneyId);
   }, [currentJourneyId]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const history = getPromHistory(id);
+    setSubmittedPromToday(history.some((entry) => entry.date === today));
+  }, [id]);
 
   if (!patient) {
     return (
@@ -106,21 +162,70 @@ export default function PageClient({ id }: { id: string }) {
 
   const currentStage = patient.stages.find((s) => s.status === "current");
   const currentJourneyStage = JOURNEY_STAGES.find((stage) => stage.id === currentJourneyId);
+  const daySinceSurgery = getDayDiff(patient.surgery.date, new Date());
+  const nextFollowUpDays = nextFollowUp ? getDayDiff(new Date(), nextFollowUp.date) : null;
+
+  const isFollowUpD1 = nextFollowUpDays === 1;
+  const latestDuePromCheckpoint =
+    MICRO_PROM_SCHEDULE.filter((cp) => cp.day <= daySinceSurgery).at(-1) ?? null;
+  const hasDuePromCheckpoint = Boolean(latestDuePromCheckpoint);
+  const hasPromPendingToday = hasDuePromCheckpoint && !submittedPromToday;
+
   const currentJourneyTasks = (currentJourneyStage?.tasks ?? []).map((task, index) => ({
     key: `journey-${currentJourneyId}-${index}`,
     task,
   }));
-  const todayTodo = currentJourneyTasks.find((item) => !checklist[item.key]) ?? null;
+
+  const stageTodo = currentJourneyTasks.find((item) => !checklist[item.key]) ?? null;
+  let todayTodo: TodayTodo | null = null;
+
+  if (isFollowUpD1 && nextFollowUp) {
+    const followUpKey = `priority-followup-prep-${nextFollowUp.date}`;
+    if (!checklist[followUpKey]) {
+      todayTodo = {
+        key: followUpKey,
+        title: "내일 외래 준비",
+        subtitle: `${nextFollowUp.label} (${formatDate(nextFollowUp.date)}) 방문 전 준비물을 확인해주세요.`,
+        href: `/patient/${patient.id}/timeline`,
+        canCheck: true,
+        checkLabel: "준비 완료",
+        actionLabel: "준비 내용 보기",
+      };
+    }
+  }
+
+  if (!todayTodo && hasPromPendingToday) {
+    todayTodo = {
+      key: `priority-prom-${new Date().toISOString().slice(0, 10)}`,
+      title: "회복 설문 작성",
+      subtitle: latestDuePromCheckpoint
+        ? `${latestDuePromCheckpoint.label} 회복 설문이 아직 작성되지 않았습니다.`
+        : "오늘 회복 설문이 아직 작성되지 않았습니다.",
+      href: `/patient/${patient.id}/prom`,
+      canCheck: false,
+      actionLabel: "설문 작성하기",
+    };
+  }
+
+  if (!todayTodo && stageTodo) {
+    todayTodo = {
+      key: stageTodo.key,
+      title: stageTodo.task,
+      subtitle: `현재 단계: ${currentJourneyStage?.titleKo ?? "수술 여정"}`,
+      href: stageTodo.task.includes("설문")
+        ? `/patient/${patient.id}/prom`
+        : currentStage
+          ? `/patient/${patient.id}/instructions/${currentStage.id}`
+          : `/patient/${patient.id}/timeline`,
+      canCheck: true,
+      checkLabel: "완료 체크",
+      actionLabel: "자세히 보기",
+    };
+  }
+
   const allTodayTasksDone =
     currentJourneyTasks.length > 0 &&
     currentJourneyTasks.every((item) => checklist[item.key]);
-  const todayTaskHref = todayTodo
-    ? todayTodo.task.includes("설문")
-      ? `/patient/${patient.id}/prom`
-      : currentStage
-        ? `/patient/${patient.id}/instructions/${currentStage.id}`
-        : `/patient/${patient.id}/timeline`
-    : null;
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -185,29 +290,29 @@ export default function PageClient({ id }: { id: string }) {
                 : "text-emerald-700 bg-emerald-50 border-emerald-200"
             }`}
           >
-            {todayTodo ? "진행 중" : allTodayTasksDone ? "완료" : "확인 필요"}
+            {todayTodo ? "우선 확인" : allTodayTasksDone || submittedPromToday ? "완료" : "확인 필요"}
           </span>
         </div>
 
         {todayTodo ? (
           <>
-            <p className="mt-2 text-sm font-semibold text-gray-900">{todayTodo.task}</p>
-            <p className="mt-1 text-xs text-gray-500">
-              현재 단계: {currentJourneyStage?.titleKo ?? "수술 여정"}
-            </p>
+            <p className="mt-2 text-sm font-semibold text-gray-900">{todayTodo.title}</p>
+            <p className="mt-1 text-xs text-gray-500">{todayTodo.subtitle}</p>
             <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => toggleCheck(todayTodo.key)}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
-              >
-                완료 체크
-              </button>
-              {todayTaskHref && (
+              {todayTodo.canCheck && (
+                <button
+                  onClick={() => toggleCheck(todayTodo.key)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
+                >
+                  {todayTodo.checkLabel ?? "완료 체크"}
+                </button>
+              )}
+              {todayTodo.href && (
                 <Link
-                  href={todayTaskHref}
+                  href={todayTodo.href}
                   className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
                 >
-                  자세히 보기
+                  {todayTodo.actionLabel}
                 </Link>
               )}
             </div>
