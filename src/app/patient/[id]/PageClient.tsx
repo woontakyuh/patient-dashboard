@@ -20,6 +20,7 @@ import type {
   JourneyStageId,
   PromInstrumentId,
   PromResult,
+  SurgeryType,
 } from "@/lib/types";
 import {
   ClipboardCheck,
@@ -103,11 +104,28 @@ type TodayTodo = {
   key: string;
   title: string;
   subtitle: string;
+  hint?: string;
   href: string;
   canCheck: boolean;
   checkLabel?: string;
   actionLabel: string;
 };
+
+function getSurgerySpecificHint(type: SurgeryType): string {
+  switch (type) {
+    case "fusion":
+      return "오늘은 허리 굽힘·들기·비틀기 동작을 특히 조심하세요.";
+    case "ube_lumbar":
+    case "vp":
+      return "짧은 걷기를 자주 하고, 오래 앉는 시간은 줄여주세요.";
+    case "acdf":
+    case "lp":
+    case "ube_cervical":
+      return "목을 갑자기 돌리거나 젖히는 동작은 피해주세요.";
+    default:
+      return "무리하지 말고, 통증이 심해지면 바로 병원에 연락하세요.";
+  }
+}
 
 export default function PageClient({ id }: { id: string }) {
   const { patient } = usePatientData(id);
@@ -164,8 +182,10 @@ export default function PageClient({ id }: { id: string }) {
   const currentJourneyStage = JOURNEY_STAGES.find((stage) => stage.id === currentJourneyId);
   const daySinceSurgery = getDayDiff(patient.surgery.date, new Date());
   const nextFollowUpDays = nextFollowUp ? getDayDiff(new Date(), nextFollowUp.date) : null;
+  const surgeryHint = getSurgerySpecificHint(patient.surgery.type);
 
   const isFollowUpD1 = nextFollowUpDays === 1;
+  const isFollowUpD2 = nextFollowUpDays === 2;
   const latestDuePromCheckpoint =
     MICRO_PROM_SCHEDULE.filter((cp) => cp.day <= daySinceSurgery).at(-1) ?? null;
   const hasDuePromCheckpoint = Boolean(latestDuePromCheckpoint);
@@ -186,9 +206,26 @@ export default function PageClient({ id }: { id: string }) {
         key: followUpKey,
         title: "내일 외래 준비",
         subtitle: `${nextFollowUp.label} (${formatDate(nextFollowUp.date)}) 방문 전 준비물을 확인해주세요.`,
+        hint: surgeryHint,
         href: `/patient/${patient.id}/timeline`,
         canCheck: true,
         checkLabel: "준비 완료",
+        actionLabel: "준비 내용 보기",
+      };
+    }
+  }
+
+  if (!todayTodo && isFollowUpD2 && nextFollowUp) {
+    const followUpPrepKey = `priority-followup-prep-d2-${nextFollowUp.date}`;
+    if (!checklist[followUpPrepKey]) {
+      todayTodo = {
+        key: followUpPrepKey,
+        title: "외래 2일 전 준비 시작",
+        subtitle: `${nextFollowUp.label} (${formatDate(nextFollowUp.date)}) 전에 증상 메모와 복용약을 정리해주세요.`,
+        hint: surgeryHint,
+        href: `/patient/${patient.id}/timeline`,
+        canCheck: true,
+        checkLabel: "정리 완료",
         actionLabel: "준비 내용 보기",
       };
     }
@@ -201,6 +238,7 @@ export default function PageClient({ id }: { id: string }) {
       subtitle: latestDuePromCheckpoint
         ? `${latestDuePromCheckpoint.label} 회복 설문이 아직 작성되지 않았습니다.`
         : "오늘 회복 설문이 아직 작성되지 않았습니다.",
+      hint: surgeryHint,
       href: `/patient/${patient.id}/prom`,
       canCheck: false,
       actionLabel: "설문 작성하기",
@@ -212,6 +250,7 @@ export default function PageClient({ id }: { id: string }) {
       key: stageTodo.key,
       title: stageTodo.task,
       subtitle: `현재 단계: ${currentJourneyStage?.titleKo ?? "수술 여정"}`,
+      hint: surgeryHint,
       href: stageTodo.task.includes("설문")
         ? `/patient/${patient.id}/prom`
         : currentStage
@@ -298,6 +337,11 @@ export default function PageClient({ id }: { id: string }) {
           <>
             <p className="mt-2 text-sm font-semibold text-gray-900">{todayTodo.title}</p>
             <p className="mt-1 text-xs text-gray-500">{todayTodo.subtitle}</p>
+            {todayTodo.hint && (
+              <p className="mt-1 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-md px-2 py-1">
+                {todayTodo.hint}
+              </p>
+            )}
             <div className="flex gap-2 mt-3">
               {todayTodo.canCheck && (
                 <button
