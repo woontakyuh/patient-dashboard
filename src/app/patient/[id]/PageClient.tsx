@@ -105,6 +105,22 @@ export default function PageClient({ id }: { id: string }) {
   }
 
   const currentStage = patient.stages.find((s) => s.status === "current");
+  const currentJourneyStage = JOURNEY_STAGES.find((stage) => stage.id === currentJourneyId);
+  const currentJourneyTasks = (currentJourneyStage?.tasks ?? []).map((task, index) => ({
+    key: `journey-${currentJourneyId}-${index}`,
+    task,
+  }));
+  const todayTodo = currentJourneyTasks.find((item) => !checklist[item.key]) ?? null;
+  const allTodayTasksDone =
+    currentJourneyTasks.length > 0 &&
+    currentJourneyTasks.every((item) => checklist[item.key]);
+  const todayTaskHref = todayTodo
+    ? todayTodo.task.includes("설문")
+      ? `/patient/${patient.id}/prom`
+      : currentStage
+        ? `/patient/${patient.id}/instructions/${currentStage.id}`
+        : `/patient/${patient.id}/timeline`
+    : null;
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -157,6 +173,65 @@ export default function PageClient({ id }: { id: string }) {
             style={{ width: `${progress}%` }}
           />
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">오늘 할 일 1개</p>
+          <span
+            className={`text-[10px] px-2 py-0.5 rounded-full border ${
+              todayTodo
+                ? "text-orange-700 bg-orange-50 border-orange-200"
+                : "text-emerald-700 bg-emerald-50 border-emerald-200"
+            }`}
+          >
+            {todayTodo ? "진행 중" : allTodayTasksDone ? "완료" : "확인 필요"}
+          </span>
+        </div>
+
+        {todayTodo ? (
+          <>
+            <p className="mt-2 text-sm font-semibold text-gray-900">{todayTodo.task}</p>
+            <p className="mt-1 text-xs text-gray-500">
+              현재 단계: {currentJourneyStage?.titleKo ?? "수술 여정"}
+            </p>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => toggleCheck(todayTodo.key)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                완료 체크
+              </button>
+              {todayTaskHref && (
+                <Link
+                  href={todayTaskHref}
+                  className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  자세히 보기
+                </Link>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-sm font-semibold text-emerald-700">
+              오늘 할 일을 모두 완료했어요.
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              {nextMicroProm
+                ? `다음 체크포인트(${nextMicroProm.label})에 맞춰 회복 설문을 작성해주세요.`
+                : "오늘은 충분히 쉬고 컨디션을 확인해주세요."}
+            </p>
+            {nextMicroProm && (
+              <Link
+                href={`/patient/${patient.id}/prom`}
+                className="inline-flex mt-3 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors"
+              >
+                설문 작성하기
+              </Link>
+            )}
+          </>
+        )}
       </div>
 
       {nextFollowUp && (
