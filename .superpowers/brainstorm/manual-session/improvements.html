@@ -1,0 +1,112 @@
+<h2>개선 제안 사항</h2>
+<p class="subtitle">현재 구상에서 고려해볼 3가지 포인트</p>
+
+<div class="section">
+  <h3>1. 라우팅 충돌 위험</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header" style="background: #dc2626; color: white;">현재 구상 — 충돌 가능성</div>
+      <div class="mockup-body" style="padding: 16px; font-size: 13px; line-height: 2;">
+        <code>spinetrack.ai/</code> → 랜딩 페이지<br>
+        <code>spinetrack.ai/<strong>P001</strong></code> → 환자 대시보드<br>
+        <code>spinetrack.ai/<strong>about</strong></code> → 소개 페이지?<br>
+        <code>spinetrack.ai/<strong>pricing</strong></code> → 가격?<br>
+        <div style="margin-top: 12px; background: #fef2f2; padding: 8px; border-radius: 6px; color: #991b1b;">
+          ⚠️ /about 과 /P001 이 같은 [slug] 라우트를 공유<br>
+          → 환자 ID가 페이지명과 겹치면 충돌
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header" style="background: #059669; color: white;">대안 — 서브도메인 분리</div>
+      <div class="mockup-body" style="padding: 16px; font-size: 13px; line-height: 2;">
+        <code>spinetrack.ai/*</code> → 랜딩 + 마케팅 페이지<br>
+        <code><strong>app</strong>.spinetrack.ai/P001</code> → 환자 대시보드<br>
+        <code><strong>dashboard</strong>.spinetrack.ai/</code> → 관리자<br>
+        <div style="margin-top: 12px; background: #f0fdf4; padding: 8px; border-radius: 6px; color: #166534;">
+          ✓ 각 도메인이 독립적 → 충돌 없음<br>
+          ✓ 환자 QR: app.spinetrack.ai/P001
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. 데이터 레이어 — 가장 큰 과제</h3>
+  <div class="mockup">
+    <div class="mockup-header">현재: localStorage 기반 → 관리자 대시보드 불가능</div>
+    <div class="mockup-body" style="padding: 20px; font-size: 13px;">
+      <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center;">
+        <div style="background: #dbeafe; padding: 12px; border-radius: 8px; text-align: center;">
+          <strong>환자 브라우저</strong><br>
+          <span style="font-size: 11px; color: #666;">PROM, 접속 로그, 체크리스트<br>모두 localStorage에 저장</span>
+        </div>
+        <div style="font-size: 24px; color: #dc2626;">✕</div>
+        <div style="background: #f3e8ff; padding: 12px; border-radius: 8px; text-align: center;">
+          <strong>관리자 대시보드</strong><br>
+          <span style="font-size: 11px; color: #666;">환자 데이터에 접근 불가<br>localStorage는 브라우저 격리</span>
+        </div>
+      </div>
+      <div style="margin-top: 16px; background: #fffbeb; padding: 12px; border-radius: 8px;">
+        <strong>필요한 것:</strong> 서버 사이드 데이터베이스 (Cloudflare D1, Supabase, 등)<br>
+        → 환자가 PROM 제출 시 서버에 저장 → 관리자가 조회 가능
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. 프로젝트 구조: 모노레포 vs 멀티레포</h3>
+  <div class="options">
+    <div class="option" data-choice="monorepo" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>모노레포 (Turborepo)</h3>
+        <p><code>apps/landing</code> + <code>apps/patient</code> + <code>apps/admin</code></p>
+        <div class="pros-cons" style="margin-top: 8px;">
+          <div class="pros"><h4>장점</h4><ul><li>타입/유틸 공유 쉬움</li><li>한 번에 배포 관리</li><li>코드 일관성</li></ul></div>
+          <div class="cons"><h4>단점</h4><ul><li>초기 셋업 복잡</li><li>빌드 시간 증가</li></ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="option" data-choice="single-app" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>단일 Next.js 앱 확장</h3>
+        <p>현재 프로젝트에 랜딩 + 관리자 라우트 추가</p>
+        <div class="pros-cons" style="margin-top: 8px;">
+          <div class="pros"><h4>장점</h4><ul><li>기존 코드 그대로 활용</li><li>셋업 비용 최소</li><li>Vercel 하나로 배포</li></ul></div>
+          <div class="cons"><h4>단점</h4><ul><li>앱이 커지면 복잡도 증가</li><li>서브도메인 라우팅 별도 설정</li></ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="option" data-choice="multi-repo" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>멀티레포 (별도 프로젝트)</h3>
+        <p>랜딩/환자/관리자를 각각 독립 레포로</p>
+        <div class="pros-cons" style="margin-top: 8px;">
+          <div class="pros"><h4>장점</h4><ul><li>완전한 독립 배포</li><li>팀 분리 시 유리</li></ul></div>
+          <div class="cons"><h4>단점</h4><ul><li>타입/컴포넌트 공유 어려움</li><li>일관성 유지 힘듦</li><li>관리 포인트 3배</li></ul></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px; background: #f0f9ff; padding: 20px; border-radius: 12px;">
+  <h3 style="margin-top: 0;">내 추천</h3>
+  <p style="line-height: 1.8; font-size: 14px;">
+    <strong>B (단일 앱 확장)</strong>을 추천합니다. 이유:
+  </p>
+  <ul style="line-height: 2; font-size: 14px;">
+    <li>혼자 개발하는 프로젝트에서 모노레포/멀티레포는 오버엔지니어링</li>
+    <li>Next.js의 미들웨어로 서브도메인 라우팅 처리 가능</li>
+    <li>기존 코드, 타입, 컴포넌트를 그대로 재사용</li>
+    <li>나중에 커지면 그때 분리해도 늦지 않음</li>
+  </ul>
+  <p style="font-size: 14px;">
+    단, <strong>서브도메인 분리</strong>(app.spinetrack.ai)는 강력 추천 — 라우팅 충돌 방지 + 깔끔한 구조
+  </p>
+</div>

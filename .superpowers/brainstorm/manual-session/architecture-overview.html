@@ -1,0 +1,86 @@
+<h2>SpineTrack 서비스 아키텍처 구상</h2>
+<p class="subtitle">현재 구조 vs 목표 구조</p>
+
+<div class="section">
+  <h3>현재 (AS-IS)</h3>
+  <div class="mockup">
+    <div class="mockup-header">spinetrack.ai — 단일 Next.js 앱</div>
+    <div class="mockup-body" style="padding: 20px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+      <div style="background: #fee2e2; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;">
+        / → /P004 로 리다이렉트 (랜딩 페이지 없음)
+      </div>
+      <div style="background: #dbeafe; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;">
+        /P001, /P002 ... → 환자 대시보드 (short URL)
+      </div>
+      <div style="background: #dbeafe; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px;">
+        /patient/[id]/* → 환자 대시보드 (full URL)
+      </div>
+      <div style="background: #e5e7eb; padding: 8px 12px; border-radius: 6px;">
+        관리자 대시보드 없음
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>목표 (TO-BE) — 3개 서비스</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+
+    <div class="mockup">
+      <div class="mockup-header" style="background: #1e40af; color: white;">① spinetrack.ai</div>
+      <div class="mockup-body" style="padding: 16px; font-size: 13px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">공개 랜딩 페이지</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.8;">
+          <li>SpineTrack 서비스 소개</li>
+          <li>누구나 접속 가능</li>
+          <li>마케팅/설명 콘텐츠</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header" style="background: #059669; color: white;">② spinetrack.ai/[환자번호]</div>
+      <div class="mockup-body" style="padding: 16px; font-size: 13px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">개별 환자 대시보드</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.8;">
+          <li>기존 기능 그대로 유지</li>
+          <li>생년월일 인증</li>
+          <li>타임라인, PROM, 교육 등</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header" style="background: #7c3aed; color: white;">③ dashboard.spinetrack.ai</div>
+      <div class="mockup-body" style="padding: 16px; font-size: 13px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">의료진 관리 대시보드</div>
+        <ul style="margin: 0; padding-left: 18px; line-height: 1.8;">
+          <li>환자 접속률/PROM 응답률</li>
+          <li>개별 환자 결과 조회</li>
+          <li>환자 Outcome 대시보드</li>
+          <li>질문 사항 관리</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">이 구조가 맞나요?</h3>
+<p class="subtitle">맞으면 아래에서 선택해주시고, 수정할 부분이 있으면 터미널에서 알려주세요.</p>
+
+<div class="options">
+  <div class="option" data-choice="correct" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>네, 이 구조가 맞습니다</h3>
+      <p>3개 서비스 분리 방향으로 진행</p>
+    </div>
+  </div>
+  <div class="option" data-choice="modify" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>방향은 맞지만 수정할 부분이 있어요</h3>
+      <p>터미널에서 수정 사항 설명할게요</p>
+    </div>
+  </div>
+</div>
