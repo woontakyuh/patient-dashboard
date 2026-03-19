@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { getSurgeryTemplate } from "@/data/surgery-templates";
 import { joaItems } from "@/data/prom-instruments";
-import type { PromResult } from "@/lib/types";
+import type { PromResult, PromTrendPoint } from "@/lib/types";
 import { usePatientData } from "@/lib/usePatientData";
 
 const LEGACY_STORAGE_KEY = "prom-history-v2";
@@ -43,15 +43,46 @@ function getHistory(patientId: string): PromResult[] {
   }
 }
 
+type MergedPromEntry = PromResult & { displayLabel?: string };
+
+/** Convert Notion promTrend to PromResult-like format for merging */
+function trendToResults(trend: PromTrendPoint[]): MergedPromEntry[] {
+  return trend.map((tp) => ({
+    patientId: "",
+    date: tp.date,
+    vas_back: tp.vas_back ?? 0,
+    vas_leg: tp.vas_leg ?? 0,
+    odi_total_percent: tp.odi_percent ?? undefined,
+    ndi_total_percent: tp.ndi_percent ?? undefined,
+    joa_score: tp.joa_score ?? undefined,
+    eq5d_dimensions: [],
+    eq5d_code: "",
+    eq_vas: tp.eq_vas ?? 0,
+    timestamp: tp.date,
+    displayLabel: tp.label,
+  }));
+}
+
+function mergeHistory(local: PromResult[], trend: PromTrendPoint[]): MergedPromEntry[] {
+  const notionEntries = trendToResults(trend);
+  // Local entries take priority for same date
+  const localDates = new Set(local.map((e) => e.date));
+  const merged = [
+    ...notionEntries.filter((e) => !localDates.has(e.date)),
+    ...local,
+  ];
+  return merged.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export default function ProgressClient({ id }: { id: string }) {
-  const { patient } = usePatientData(id);
+  const { patient, promTrend } = usePatientData(id);
   const template = patient ? getSurgeryTemplate(patient.surgery.type) : null;
 
-  const [history, setHistory] = useState<PromResult[]>([]);
+  const [localHistory, setLocalHistory] = useState<PromResult[]>([]);
 
   useEffect(() => {
     const entries = getHistory(id).sort((a, b) => a.date.localeCompare(b.date));
-    setHistory(entries);
+    setLocalHistory(entries);
   }, [id]);
 
   if (!patient) {
@@ -62,6 +93,9 @@ export default function ProgressClient({ id }: { id: string }) {
     );
   }
 
+  // Merge Notion-sourced promTrend with localStorage history
+  const history = mergeHistory(localHistory, promTrend);
+
   const hasOdi = patient.promInstruments.includes("odi");
   const hasNdi = patient.promInstruments.includes("ndi");
   const hasJoa = patient.promInstruments.includes("joa");
@@ -69,37 +103,41 @@ export default function ProgressClient({ id }: { id: string }) {
   const vasLabel1 = template?.vasConfig.scales[0]?.label ?? "허리 통증";
   const vasLabel2 = template?.vasConfig.scales[1]?.label ?? "다리 통증/저림";
 
-  const vasData = history.map((e) => ({
-    label: e.date,
-    [vasLabel1]: e.vas_back,
-    [vasLabel2]: e.vas_leg,
-  }));
+  const vasData = history
+    .filter((e) => e.vas_back !== 0 || e.vas_leg !== 0)
+    .map((e) => ({
+      label: (e as MergedPromEntry).displayLabel || e.date,
+      [vasLabel1]: e.vas_back,
+      [vasLabel2]: e.vas_leg,
+    }));
 
   const odiData = history
-    .filter((e) => e.odi_total_percent !== undefined)
+    .filter((e) => e.odi_total_percent !== undefined && e.odi_total_percent !== null)
     .map((e) => ({
-      label: e.date,
+      label: (e as MergedPromEntry).displayLabel || e.date,
       "허리 기능(%)": e.odi_total_percent as number,
     }));
 
   const ndiData = history
-    .filter((e) => e.ndi_total_percent !== undefined)
+    .filter((e) => e.ndi_total_percent !== undefined && e.ndi_total_percent !== null)
     .map((e) => ({
-      label: e.date,
+      label: (e as MergedPromEntry).displayLabel || e.date,
       "목 기능(%)": e.ndi_total_percent as number,
     }));
 
   const joaData = history
-    .filter((e) => e.joa_score !== undefined)
+    .filter((e) => e.joa_score !== undefined && e.joa_score !== null)
     .map((e) => ({
-      label: e.date,
+      label: (e as MergedPromEntry).displayLabel || e.date,
       "신경 기능 점수": e.joa_score as number,
     }));
 
-  const eqVasData = history.map((e) => ({
-    label: e.date,
-    "전반 건강 점수": e.eq_vas,
-  }));
+  const eqVasData = history
+    .filter((e) => e.eq_vas !== 0)
+    .map((e) => ({
+      label: (e as MergedPromEntry).displayLabel || e.date,
+      "전반 건강 점수": e.eq_vas,
+    }));
 
   const joaMin = joaItems.reduce(
     (sum, item) => sum + Math.min(...item.options.map((option) => option.score)),

@@ -15,6 +15,7 @@ const pages = [
   { name: "instructions-fu1y", path: "/patient/P001/instructions/fu-1y" },
   { name: "prom", path: "/patient/P001/prom" },
   { name: "progress", path: "/patient/P001/progress" },
+  { name: "admin-login", path: "/admin/login" },
 ];
 
 for (const pg of pages) {

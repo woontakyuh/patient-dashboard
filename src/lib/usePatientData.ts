@@ -7,7 +7,7 @@ import {
   getPatientById,
 } from "@/data/mock-patient";
 import { detectSurgeryType } from "@/lib/surgery-classifier";
-import type { Patient, PromInstrumentId } from "@/lib/types";
+import type { Patient, PromInstrumentId, PromTrendPoint } from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -49,6 +49,7 @@ interface WorkerPatientResponse {
     surgeon: string;
     promInstruments?: string[];
   };
+  promTrend?: PromTrendPoint[];
 }
 
 function normalizePromInstruments(input: string[] | undefined): PromInstrumentId[] {
@@ -103,9 +104,10 @@ function getPatientApiUrl(subdomain?: string): string | null {
   return `${API_BASE}/api/patient?ptno=${encodeURIComponent(subdomain)}`;
 }
 
-export function usePatientData(id: string): { patient: Patient | null; loading: boolean } {
+export function usePatientData(id: string): { patient: Patient | null; loading: boolean; promTrend: PromTrendPoint[] } {
   const [patient, setPatient] = useState<Patient | null>(() => getPatientById(id) ?? null);
   const [loading, setLoading] = useState(false);
+  const [promTrend, setPromTrend] = useState<PromTrendPoint[]>([]);
 
   useEffect(() => {
     const fallback = getPatientById(id) ?? null;
@@ -126,7 +128,10 @@ export function usePatientData(id: string): { patient: Patient | null; loading: 
         if (!data.patient || cancelled) return;
 
         const converted = buildPatientFromWorker(data.patient, fallback);
-        if (!cancelled) setPatient(converted);
+        if (!cancelled) {
+          setPatient(converted);
+          setPromTrend(data.promTrend ?? []);
+        }
       } catch {
         // Keep fallback mock data on network errors.
       } finally {
@@ -140,5 +145,5 @@ export function usePatientData(id: string): { patient: Patient | null; loading: 
     };
   }, [id]);
 
-  return { patient, loading };
+  return { patient, loading, promTrend };
 }
