@@ -31,6 +31,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# superpowers brainstorm
+.superpowers/
+
 # test artifacts
 /screenshots/
 /test-results/
