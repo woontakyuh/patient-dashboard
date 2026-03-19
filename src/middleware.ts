@@ -5,13 +5,38 @@ export function middleware(request: NextRequest) {
   const hostname = host.split(":")[0]; // strip port for local dev
   const { pathname, search } = request.nextUrl;
 
-  // Local dev: no subdomain routing (all routes accessible on localhost)
+  // Local dev: protect admin routes but no subdomain routing
   if (hostname === "localhost" || hostname === "127.0.0.1") {
+    if (
+      pathname.startsWith("/admin") &&
+      pathname !== "/admin/login" &&
+      !pathname.startsWith("/api/")
+    ) {
+      const authCookie = request.cookies.get("admin-auth");
+      if (!authCookie) {
+        return NextResponse.redirect(new URL("/admin/login", request.url));
+      }
+    }
     return NextResponse.next();
   }
 
   // Dashboard subdomain → rewrite to /admin/*
   if (hostname.startsWith("dashboard.")) {
+    // Allow login page without auth
+    if (pathname === "/login") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.rewrite(url);
+    }
+
+    // Check auth cookie for all other pages
+    const authCookie = request.cookies.get("admin-auth");
+    if (!authCookie) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.rewrite(url);
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = `/admin${pathname === "/" ? "" : pathname}`;
     return NextResponse.rewrite(url);
