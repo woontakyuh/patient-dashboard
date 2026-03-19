@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 
 const pages = [
+  { name: "landing", path: "/", scrollToBottom: true },
   { name: "dashboard", path: "/patient/P001" },
   { name: "timeline", path: "/patient/P001/timeline" },
   { name: "instructions-preop", path: "/patient/P001/instructions/pre-op" },
@@ -18,9 +19,21 @@ const pages = [
 
 for (const pg of pages) {
   test(`screenshot: ${pg.name}`, async ({ page }, testInfo) => {
-    await page.goto(pg.path, { waitUntil: "networkidle" });
-    // Small delay for animations
+    await page.goto(pg.path, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
+
+    // For pages with scroll-triggered animations, scroll to bottom first
+    if (pg.scrollToBottom) {
+      await page.evaluate(async () => {
+        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        for (let i = 0; i < document.body.scrollHeight; i += 400) {
+          window.scrollTo(0, i);
+          await delay(100);
+        }
+        window.scrollTo(0, 0);
+        await delay(300);
+      });
+    }
 
     const viewport = testInfo.project.name; // "mobile" or "desktop"
     await page.screenshot({

@@ -14,30 +14,24 @@ export default function LandingHeader() {
 
   return (
     <motion.header
-      initial={{ y: -20, opacity: 0 }}
+      initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-white/80 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+          ? "bg-white/90 backdrop-blur-xl shadow-[0_1px_0_rgba(0,0,0,0.04)]"
           : "bg-transparent"
       }`}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* Logo */}
-        <a href="/" className="group flex items-center gap-2.5">
-          <div className="relative flex h-9 w-9 items-center justify-center">
-            <div
-              className={`absolute inset-0 rounded-xl transition-colors duration-500 ${
-                scrolled
-                  ? "bg-slate-900"
-                  : "bg-white/15 backdrop-blur-sm"
-              }`}
-            />
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+        <a href="/" className="flex items-center gap-2">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-500 ${
+              scrolled ? "bg-slate-900" : "bg-white/10 backdrop-blur-sm"
+            }`}
+          >
             <svg
-              className={`relative h-5 w-5 transition-colors duration-500 ${
-                scrolled ? "text-white" : "text-white"
-              }`}
+              className="h-4 w-4 text-white"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -49,7 +43,7 @@ export default function LandingHeader() {
             </svg>
           </div>
           <span
-            className={`text-lg font-semibold tracking-tight transition-colors duration-500 ${
+            className={`text-[15px] font-semibold tracking-tight transition-colors duration-500 ${
               scrolled ? "text-slate-900" : "text-white"
             }`}
           >
@@ -57,7 +51,6 @@ export default function LandingHeader() {
           </span>
         </a>
 
-        {/* Navigation */}
         <div className="flex items-center gap-1">
           {[
             { label: "기능", href: "#features" },
@@ -66,10 +59,10 @@ export default function LandingHeader() {
             <a
               key={link.href}
               href={link.href}
-              className={`hidden rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-300 sm:block ${
+              className={`hidden rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors sm:block ${
                 scrolled
-                  ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? "text-slate-500 hover:text-slate-900"
+                  : "text-white/60 hover:text-white"
               }`}
             >
               {link.label}
@@ -77,10 +70,10 @@ export default function LandingHeader() {
           ))}
           <a
             href="https://dashboard.spinetrack.ai"
-            className={`ml-2 rounded-full px-5 py-2 text-sm font-medium transition-all duration-300 ${
+            className={`ml-2 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-300 ${
               scrolled
                 ? "bg-slate-900 text-white hover:bg-slate-800"
-                : "bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
+                : "bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
             }`}
           >
             의료진 로그인
