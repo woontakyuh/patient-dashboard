@@ -1,4 +1,4 @@
-import PageClient from "@/app/patient/[id]/PageClient";
+import PageClient from "@/app/(patient)/patient/[id]/PageClient";
 import { getAllPatientIds } from "@/data/mock-patient";
 
 export function generateStaticParams() {

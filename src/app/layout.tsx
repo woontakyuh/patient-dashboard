@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
-import AppHeader from "@/components/AppHeader";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -16,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SpineTrack — 나의 수술 여정",
-  description: "척추 수술 환자를 위한 개인 맞춤형 대시보드",
+  title: "SpineTrack",
+  description: "척추 수술 환자를 위한 맞춤형 회복 가이드",
 };
 
 export default function RootLayout({
@@ -28,17 +26,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppHeader />
-
-        {/* Main */}
-        <main className="max-w-[480px] mx-auto px-4 py-5 pb-24 md:pb-8">
-          {children}
-        </main>
-
-        {/* Bottom Nav (mobile only) */}
-        <BottomNav />
+        {children}
       </body>
     </html>
   );
