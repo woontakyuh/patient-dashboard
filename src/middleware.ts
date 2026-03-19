@@ -5,8 +5,14 @@ export function middleware(request: NextRequest) {
   const hostname = host.split(":")[0]; // strip port for local dev
   const { pathname, search } = request.nextUrl;
 
-  // Local dev: protect admin routes but no subdomain routing
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
+  // Local/dev: protect admin routes but no subdomain routing
+  // Matches localhost, 127.0.0.1, and any IP address (for LAN/SSH access)
+  const isDevHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+
+  if (isDevHost) {
     if (
       pathname.startsWith("/admin") &&
       pathname !== "/admin/login" &&
