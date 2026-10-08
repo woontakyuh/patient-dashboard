@@ -64,6 +64,38 @@ const lpTemplate = getSurgeryTemplate("lp");
 const fusionTemplate = getSurgeryTemplate("fusion");
 
 const mockPatientsData: Patient[] = [
+  // DEMO — public demo patient for the website (fictional, no API lookup)
+  {
+    id: "DEMO",
+    subdomain: "",
+    name: "데모 환자",
+    birthDate: "1980-01-01",
+    age: 46,
+    sex: "M",
+    diagnosis: {
+      code: "L4-5",
+      name: "HIVD (Lumbar disc herniation)",
+      nameKo: "요추 4-5번 추간판 탈출증",
+    },
+    surgery: {
+      type: "ube_lumbar",
+      name: ubeLumbarTemplate.name,
+      nameKo: ubeLumbarTemplate.nameKo,
+      abbreviation: ubeLumbarTemplate.abbreviation,
+      date: "2026-08-28",
+      categories: ["UBE", "discectomy"],
+    },
+    admission: {
+      date: "2026-08-27",
+      expectedDischarge: "2026-08-29",
+    },
+    hospital: "SpineTrack Demo",
+    surgeon: "Demo",
+    promInstruments: ubeLumbarTemplate.promInstruments,
+    followUps: buildFollowUpsFromTemplate("2026-08-28", "ube_lumbar"),
+    stages: buildStagesFromTemplate("2026-08-28", "ube_lumbar"),
+  },
+
   // P001 — UBE (기존 김태수)
   {
     id: "P001",
