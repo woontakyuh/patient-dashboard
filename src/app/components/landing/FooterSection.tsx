@@ -25,8 +25,9 @@ export default function FooterSection() {
 
           <div className="text-center text-xs leading-relaxed text-slate-400 sm:text-right">
             <p>
-              대표 여운탁 (Founder &amp; CEO) · CTO Tae Shin Kim · 설립 2026년 3월 · 서울
+              대표 여운탁 (Founder &amp; CEO) · CTO Tae Shin Kim · 설립 2026년 3월
             </p>
+            <p>경기도 화성시 동탄구 동탄영천로 150 (18462)</p>
             <p>
               문의{" "}
               <a href="mailto:woontakyuh@spinetrack.ai" className="hover:text-slate-600">
