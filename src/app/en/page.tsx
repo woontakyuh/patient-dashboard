@@ -201,7 +201,7 @@ export default function EnglishLandingPage() {
             <div>
               <h2 className="text-3xl font-bold tracking-tight text-slate-900">Company</h2>
               <p className="mt-4 text-slate-600">
-                SpineTrack was founded in March 2026 in Seoul, Korea, to make post-operative
+                SpineTrack was founded in March 2026 in Hwaseong (Dongtan), Gyeonggi-do, Korea, to make post-operative
                 recovery measurable and less uncertain for spine surgery patients and their care
                 teams.
               </p>
@@ -228,8 +228,12 @@ export default function EnglishLandingPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-400">Location</dt>
-                  <dd className="text-slate-700">Seoul, Republic of Korea</dd>
+                  <dt className="text-slate-400">Address</dt>
+                  <dd className="text-slate-700">
+                    150, Dongtanyeongcheon-ro, Dongtan-gu, Hwaseong-si,
+                    <br />
+                    Gyeonggi-do 18462, Republic of Korea
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-slate-400">Founded</dt>
@@ -245,7 +249,7 @@ export default function EnglishLandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-10 sm:flex-row sm:justify-between">
           <Logo dark />
           <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} SpineTrack · Seoul, Korea ·{" "}
+            © {new Date().getFullYear()} SpineTrack · Hwaseong-si, Gyeonggi-do, Korea ·{" "}
             <a href="mailto:woontakyuh@spinetrack.ai" className="hover:text-slate-600">
               woontakyuh@spinetrack.ai
             </a>
