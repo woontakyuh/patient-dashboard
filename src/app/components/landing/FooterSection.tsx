@@ -23,9 +23,22 @@ export default function FooterSection() {
             </span>
           </div>
 
-          <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} SpineTrack. All rights reserved.
-          </p>
+          <div className="text-center text-xs leading-relaxed text-slate-400 sm:text-right">
+            <p>
+              대표 유운탁 (Founder &amp; CEO) · CTO Tae Shin Kim · 설립 2026년 3월 · 서울
+            </p>
+            <p>
+              문의{" "}
+              <a href="mailto:woontakyuh@spinetrack.ai" className="hover:text-slate-600">
+                woontakyuh@spinetrack.ai
+              </a>{" "}
+              ·{" "}
+              <a href="/en" className="hover:text-slate-600">
+                English
+              </a>
+            </p>
+            <p>© {new Date().getFullYear()} SpineTrack. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </footer>
