@@ -25,7 +25,7 @@ export default function FooterSection() {
 
           <div className="text-center text-xs leading-relaxed text-slate-400 sm:text-right">
             <p>
-              대표 유운탁 (Founder &amp; CEO) · CTO Tae Shin Kim · 설립 2026년 3월 · 서울
+              대표 여운탁 (Founder &amp; CEO) · CTO Tae Shin Kim · 설립 2026년 3월 · 서울
             </p>
             <p>
               문의{" "}
