@@ -60,6 +60,33 @@ const features = [
   },
 ];
 
+const screens = [
+  {
+    src: "/screens/demo-home.png",
+    alt: "SpineTrack patient home screen",
+    title: "Home",
+    body: "Surgery details, days since surgery, today's tasks and the next clinic visit.",
+  },
+  {
+    src: "/screens/demo-prom.png",
+    alt: "SpineTrack PROM questionnaire screen",
+    title: "PROM questionnaire",
+    body: "Pain, back function, neurological and daily function, and overall health.",
+  },
+  {
+    src: "/screens/demo-progress.png",
+    alt: "SpineTrack recovery charts",
+    title: "Recovery charts",
+    body: "Pain, ODI and EQ-VAS trends against the pre-op baseline.",
+  },
+  {
+    src: "/screens/demo-timeline.png",
+    alt: "SpineTrack surgical journey timeline",
+    title: "Journey timeline",
+    body: "Every stage from admission to the 1-year follow-up, with what to do at each step.",
+  },
+];
+
 const steps = [
   { n: "01", title: "Scan the QR code", body: "Patients receive a QR code at admission that opens their personal dashboard." },
   { n: "02", title: "Daily check-in", body: "A one-minute questionnaire records how recovery is going." },
@@ -79,6 +106,9 @@ export default function EnglishLandingPage() {
           <div className="flex items-center gap-1">
             <a href="#product" className="hidden rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white sm:block">
               Product
+            </a>
+            <a href="#screens" className="hidden rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white sm:block">
+              Screens
             </a>
             <a href="#company" className="hidden rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white sm:block">
               Company
@@ -147,6 +177,36 @@ export default function EnglishLandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Screens */}
+        <section id="screens" className="border-t border-slate-100 py-24">
+          <div className="mx-auto max-w-6xl px-6">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">See it in action</h2>
+            <p className="mt-3 max-w-2xl text-slate-500">
+              The patient app as patients see it on their phones (Korean UI, fictional demo patient).
+            </p>
+            <div className="mt-12 grid grid-cols-2 gap-6 lg:grid-cols-4">
+              {screens.map((s) => (
+                <figure key={s.src}>
+                  <div className="overflow-hidden rounded-[2rem] border-[6px] border-slate-900 bg-slate-50 shadow-xl">
+                    <img src={s.src} alt={s.alt} width={480} height={844} className="block h-auto w-full" loading="lazy" />
+                  </div>
+                  <figcaption className="mt-4">
+                    <div className="text-sm font-semibold text-slate-900">{s.title}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-slate-500">{s.body}</div>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            <p className="mt-10 text-sm text-slate-500">
+              Try the live demo:{" "}
+              <a href="https://patient.spinetrack.ai/DEMO" className="font-medium text-sky-600 hover:underline">
+                patient.spinetrack.ai/DEMO
+              </a>{" "}
+              (demo code: 800101)
+            </p>
           </div>
         </section>
 
