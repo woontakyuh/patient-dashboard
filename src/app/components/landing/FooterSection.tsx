@@ -34,7 +34,7 @@ export default function FooterSection() {
                 woontakyuh@spinetrack.ai
               </a>{" "}
               ·{" "}
-              <a href="/en" className="hover:text-slate-600">
+              <a href="/" className="hover:text-slate-600">
                 English
               </a>
             </p>

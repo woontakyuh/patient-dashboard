@@ -100,7 +100,7 @@ export default function EnglishLandingPage() {
       {/* Header */}
       <header className="absolute left-0 right-0 top-0 z-50">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <a href="/en">
+          <a href="/">
             <Logo />
           </a>
           <div className="flex items-center gap-1">
@@ -113,7 +113,7 @@ export default function EnglishLandingPage() {
             <a href="#company" className="hidden rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white sm:block">
               Company
             </a>
-            <a href="/" className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white">
+            <a href="/ko" className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/60 hover:text-white">
               한국어
             </a>
             <a
