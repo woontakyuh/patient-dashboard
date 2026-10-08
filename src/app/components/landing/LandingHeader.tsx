@@ -24,7 +24,7 @@ export default function LandingHeader() {
       }`}
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-        <a href="/" className="flex items-center gap-2">
+        <a href="/ko" className="flex items-center gap-2">
           <div
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-500 ${
               scrolled ? "bg-slate-900" : "bg-white/10 backdrop-blur-sm"
@@ -69,7 +69,7 @@ export default function LandingHeader() {
             </a>
           ))}
           <a
-            href="/en"
+            href="/"
             className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
               scrolled
                 ? "text-slate-500 hover:text-slate-900"
