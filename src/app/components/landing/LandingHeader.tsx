@@ -69,6 +69,16 @@ export default function LandingHeader() {
             </a>
           ))}
           <a
+            href="/en"
+            className={`rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
+              scrolled
+                ? "text-slate-500 hover:text-slate-900"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            EN
+          </a>
+          <a
             href="https://dashboard.spinetrack.ai"
             className={`ml-2 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-300 ${
               scrolled
